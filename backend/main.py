@@ -5,22 +5,14 @@ import asyncio
 from typing import Dict
 from pathlib import Path
 from pydub import AudioSegment
-from pydub.utils import which
+import time
 import io
-import shutil
+
+import os
+os.environ['PATH'] += r';C:\ffmpeg\ffmpeg-2025-11-17-git-e94439e49b-full_build\bin'
 
 app = FastAPI(title="Real-time Transcription API")
 
-# Check FFmpeg availability
-ffmpeg_path = shutil.which("ffmpeg")
-if ffmpeg_path:
-    print(f"FFmpeg found at: {ffmpeg_path}")
-    AudioSegment.converter = ffmpeg_path
-    AudioSegment.ffmpeg = ffmpeg_path
-    AudioSegment.ffprobe = shutil.which("ffprobe")
-else:
-    print("WARNING: FFmpeg not found in PATH")
-    print("Please install FFmpeg and add to PATH")
 
 # Enable CORS for Next.js frontend
 app.add_middleware(
@@ -39,6 +31,7 @@ async def upload_chunk(audio: UploadFile = File(...)):
     """Upload audio chunk and return transcription key"""
     # Generate unique key
     transcription_key = str(uuid.uuid4())
+    transcription_key = str(int(time.time() * 1000))
     
     # Read file content before starting async task
     content = await audio.read()
@@ -54,32 +47,33 @@ async def process_transcription(key: str, filename: str, content: bytes, content
     """Save audio file and process transcription"""
     
     # Save audio file
-    out_dir = Path("./out")
+    out_dir = Path("./out_wav")
     out_dir.mkdir(exist_ok=True, parents=True)
     
     print(f"Processing {len(content)} bytes, content type: {content_type}")
     
-    # Convert WebM to MP3 using pydub (simpler, no FFmpeg needed)
-    try:
-        # Load WebM audio from bytes
-        audio_segment = AudioSegment.from_file(io.BytesIO(content))
-        
-        # Create MP3 filename
-        base_name = filename.replace('.wav', '')
-        mp3_path = out_dir / f"{key[:8]}_{base_name}.mp3"
-        
-        # Export as MP3
-        audio_segment.export(mp3_path, format="mp3")
-        
-        print(f"Converted and saved MP3 file: {mp3_path}")
-        print(f"Audio duration: {len(audio_segment)}ms")
-        
-    except Exception as e:
-        print(f"ERROR: Failed to convert audio to MP3: {e}")
-        print(f"Cannot proceed without MP3 file for transcription model")
-        return  # Don't create transcription if conversion fails
+    # Convert WebM to WAV for transcription model
+    if "webm" in content_type:
+        try:
+            # Load WebM and convert to WAV
+            audio_segment = AudioSegment.from_file(io.BytesIO(content))
+            wav_file = out_dir / f"{key[:]}.wav"
+            audio_segment.export(wav_file, format="wav")
+            print(f"Converted WebM to WAV: {wav_file}")
+        except Exception as e:
+            print(f"ERROR: Failed to convert WebM: {e}")
+            # Save raw WebM as fallback
+            webm_file = out_dir / f"{key[:]}.webm"
+            with open(webm_file, "wb") as f:
+                f.write(content)
+            print(f"Saved raw WebM: {webm_file}")
+    else:
+        # Save WAV as-is
+        wav_file = out_dir / f"{key[:]}.wav"
+        with open(wav_file, "wb") as f:
+            f.write(content)
+        print(f"Saved WAV: {wav_file}")
     
-    # Mock transcription result
     transcriptions[key] = f"Mock transcription for {filename} - Hello world from audio chunk"
     print(f"Transcription ready for key: {key[:8]}...")
 

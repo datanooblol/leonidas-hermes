@@ -13,11 +13,12 @@ export const useAudioRecorder = (onNewKey: (keyData: TranscriptionKey) => void) 
   const [chunkCount, setChunkCount] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const uploadChunk = async (audioBlob: Blob, chunkId: number) => {
+  const uploadChunkWithFormat = async (audioBlob: Blob, chunkId: number, fileExt: string) => {
     try {
       const formData = new FormData();
-      formData.append('audio', audioBlob, `chunk_${chunkId}.wav`);
+      formData.append('audio', audioBlob, `chunk_${chunkId}${fileExt}`);
       
       const response = await fetch('http://localhost:8000/upload_chunk', {
         method: 'POST',
@@ -54,33 +55,51 @@ export const useAudioRecorder = (onNewKey: (keyData: TranscriptionKey) => void) 
       });
       
       streamRef.current = stream;
-      // Try WAV first, fallback to WebM
-      let mimeType = 'audio/wav';
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = 'audio/webm;codecs=opus';
-      }
+      // Use WebM since WAV is not supported in most browsers
+      let mimeType = 'audio/webm;codecs=opus';
+      let fileExt = '.webm';
       
       const mediaRecorder = new MediaRecorder(stream, { mimeType });
       
       mediaRecorderRef.current = mediaRecorder;
       let currentChunkId = 0;
 
+      let chunks: Blob[] = [];
+      
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          uploadChunk(event.data, currentChunkId);
-          currentChunkId++;
-          setChunkCount(currentChunkId);
+          chunks.push(event.data);
         }
+      };
+      
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: mimeType });
+        uploadChunkWithFormat(blob, currentChunkId, fileExt);
+        currentChunkId++;
+        setChunkCount(currentChunkId);
+        chunks = [];
       };
 
       mediaRecorder.onerror = (event) => {
         console.error('MediaRecorder error:', event);
       };
 
-      // Start recording with 2-second chunks
-      mediaRecorder.start(2000);
+      // Start first recording
+      mediaRecorder.start();
       setIsRecording(true);
       setChunkCount(0);
+      
+      // Auto stop/start every 2 seconds
+      intervalRef.current = setInterval(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.stop();
+          setTimeout(() => {
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'inactive') {
+              mediaRecorderRef.current.start();
+            }
+          }, 100);
+        }
+      }, 2000);
       
     } catch (error) {
       console.error('Error accessing microphone:', error);
@@ -89,6 +108,12 @@ export const useAudioRecorder = (onNewKey: (keyData: TranscriptionKey) => void) 
   }, [onNewKey]);
 
   const stopRecording = useCallback(() => {
+    // Clear interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);

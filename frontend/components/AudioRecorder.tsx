@@ -55,7 +55,7 @@ export default function AudioRecorder({ onNewTranscriptionKey }: AudioRecorderPr
 
       {!isRecording && chunkCount === 0 && (
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-blue-700 text-sm">
-          💡 Click "Start Recording" to begin. Audio will be processed in 2-second chunks.
+          💡 Click "Start Recording" to begin. Audio will be processed in 2-second chunks automatically.
         </div>
       )}
     </div>
