@@ -9,12 +9,16 @@ import time
 import io
 import json
 import os
-from package.interfaces import *
+from memory import MemoryFactory, create_memory_backend
+from backend.audio_processing.overlatp_to_transcribe import Overlap2Transcribe
+
+ol2t = Overlap2Transcribe()
+voice_memory = create_memory_backend("duckdb", db_path="duckdb_session_audio.db")
+ws_session_id = None
 
 os.environ['PATH'] += r';C:\ffmpeg\ffmpeg-2025-11-17-git-e94439e49b-full_build\bin'
 
 app = FastAPI(title="Real-time Transcription API")
-
 
 # Enable CORS for Next.js frontend
 app.add_middleware(
@@ -111,14 +115,19 @@ async def websocket_endpoint(websocket: WebSocket):
                 audio_segment = AudioSegment.from_file(io.BytesIO(data))
                 wav_file = out_dir / f"{timestamp}.wav"
                 audio_segment.export(wav_file, format="wav")
-                
+                global ws_session_id
+                if ws_session_id is None:
+                    ws_session_id = voice_memory.create_session()
+                    print(f"Created WebSocket session: {ws_session_id}")
                 # Mock transcription
-                transcription = f"Real-time transcription at {timestamp}"
-                
+                # transcription = f"Real-time transcription at {timestamp}"
+                chunk_id = voice_memory.create_chunk(ws_session_id, str(wav_file), 0)
+                records = voice_memory.get_last_n_chunks(ws_session_id, 2)
+                transcription = ol2t.run(records)
                 # Send result back
                 await websocket.send_text(json.dumps({
                     "timestamp": timestamp,
-                    "transcription": transcription,
+                    "transcription": f"{transcription}",
                     "status": "success"
                 }))
                 
@@ -137,6 +146,11 @@ async def websocket_endpoint(websocket: WebSocket):
 async def health_check():
     """Health check endpoint"""
     return {"status": "ok", "message": "Transcription API is running"}
+
+@app.get("/memory")
+async def memory_check():
+    """Health check endpoint"""
+    return {"status": "ok", "message": MemoryFactory.list_available_backends()}
 
 if __name__ == "__main__":
     import uvicorn
