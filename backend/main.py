@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import uuid
 import asyncio
@@ -7,6 +7,7 @@ from pathlib import Path
 from pydub import AudioSegment
 import time
 import io
+import json
 
 import os
 os.environ['PATH'] += r';C:\ffmpeg\ffmpeg-2025-11-17-git-e94439e49b-full_build\bin'
@@ -85,6 +86,51 @@ async def get_transcription(transcription_key: str):
         return {"status": "ready", "text": text}
     else:
         return {"status": "processing"}
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for real-time audio streaming"""
+    await websocket.accept()
+    print("WebSocket connection established")
+    
+    try:
+        while True:
+            # Receive audio data
+            data = await websocket.receive_bytes()
+            
+            # Process audio in real-time
+            timestamp = str(int(time.time() * 1000))
+            
+            # Save and process audio
+            out_dir = Path("./out_ws")
+            out_dir.mkdir(exist_ok=True, parents=True)
+            
+            try:
+                # Convert audio to WAV
+                audio_segment = AudioSegment.from_file(io.BytesIO(data))
+                wav_file = out_dir / f"{timestamp}.wav"
+                audio_segment.export(wav_file, format="wav")
+                
+                # Mock transcription
+                transcription = f"Real-time transcription at {timestamp}"
+                
+                # Send result back
+                await websocket.send_text(json.dumps({
+                    "timestamp": timestamp,
+                    "transcription": transcription,
+                    "status": "success"
+                }))
+                
+                print(f"Processed WebSocket audio: {len(data)} bytes")
+                
+            except Exception as e:
+                await websocket.send_text(json.dumps({
+                    "error": str(e),
+                    "status": "error"
+                }))
+                
+    except WebSocketDisconnect:
+        print("WebSocket connection closed")
 
 @app.get("/health")
 async def health_check():
