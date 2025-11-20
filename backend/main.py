@@ -8,8 +8,9 @@ from pydub import AudioSegment
 import time
 import io
 import json
-
 import os
+from package.interfaces import *
+
 os.environ['PATH'] += r';C:\ffmpeg\ffmpeg-2025-11-17-git-e94439e49b-full_build\bin'
 
 app = FastAPI(title="Real-time Transcription API")

@@ -5,8 +5,14 @@ FastAPI backend for real-time audio transcription with async processing.
 ## Setup
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# Navigate to backend directory
+cd backend
+
+# Add memory package as editable dependency
+uv add --editable ../memory
+
+# Install all dependencies
+uv sync
 
 # Run server
 python main.py

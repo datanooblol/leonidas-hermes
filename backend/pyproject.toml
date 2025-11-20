@@ -5,9 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "duckdb>=1.4.2",
     "fastapi>=0.121.2",
     "ffmpeg>=1.4",
+    "memory",
     "moviepy>=2.2.1",
+    "pydantic>=2.12.4",
     "pydub>=0.25.1",
     "python-multipart>=0.0.20",
     "uvicorn>=0.38.0",
@@ -18,3 +21,6 @@ dependencies = [
 dev = [
     "ipykernel>=7.1.0",
 ]
+
+[tool.setuptools.packages.find]
+exclude = ["out_*", "*.out_*"]
