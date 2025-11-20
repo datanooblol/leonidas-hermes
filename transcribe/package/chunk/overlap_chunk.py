@@ -1,19 +1,19 @@
 from pydub import AudioSegment
 
-def merge_audio_with_overlap(file1_path:str, file2_path:str, output_path:str, overlap:int=0.5):
+def merge_audio_with_overlap(latest_path:str, previous_path:str, output_path:str, overlap:int=0.5):
     """Merge two audio files with overlap from the end of the first file.
     
     Args:
-        file1_path (str): Path to the first audio file
-        file2_path (str): Path to the second audio file  
+        latest_path (str): Path to the latest audio file
+        previous_path (str): Path to the previous audio file  
         output_path (str): Path for the merged output file
         overlap (int): Overlap duration in seconds (default: 0.5)
         
     Returns:
         str: Path to the merged audio file
     """
-    audio1 = AudioSegment.from_wav(file1_path)
-    audio2 = AudioSegment.from_wav(file2_path)
+    audio1 = AudioSegment.from_wav(previous_path)
+    audio2 = AudioSegment.from_wav(latest_path)
     
     overlap*=1000  # Convert to milliseconds
     audio1_overlap = audio1[-overlap:]
@@ -24,5 +24,5 @@ def merge_audio_with_overlap(file1_path:str, file2_path:str, output_path:str, ov
     # Export the result file
     merged_audio.export(output_path, format="wav")
     
-    print(f"✅ Merged {overlap/1000}s from end of {file1_path} + {file2_path} to {output_path}")
+    print(f"✅ Merged {overlap/1000}s from end of {previous_path} + {latest_path} to {output_path}")
     return output_path
