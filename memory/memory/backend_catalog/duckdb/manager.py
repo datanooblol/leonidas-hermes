@@ -1,5 +1,5 @@
-from package.interfaces import MemoryBackend
-from package.models import Session, Chunk, Transcription, SessionStatus
+from memory.interfaces import MemoryBackend
+from memory.models import Session, Chunk, Transcription, SessionStatus
 from .queries import *
 from typing import Optional, Any, List
 from datetime import datetime

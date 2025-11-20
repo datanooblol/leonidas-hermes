@@ -4,7 +4,7 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), 'package'))
 
-from package import create_memory_backend
+from memory import create_memory_backend
 
 def test_duckdb_workflow():
     print("Testing DuckDB Memory Management")
