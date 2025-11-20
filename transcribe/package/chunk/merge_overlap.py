@@ -1,6 +1,14 @@
 from rapidfuzz import fuzz
 
 def merge_overlapped_text(texts:list) -> str:
+    """Merge overlapped text segments by finding exact matches.
+    
+    Args:
+        texts (list): List of text segments to merge
+        
+    Returns:
+        str: Merged text with overlaps removed
+    """
     if not texts:
         return ""
     
@@ -11,18 +19,27 @@ def merge_overlapped_text(texts:list) -> str:
         if not current:
             continue
             
-        # หาส่วนที่ซ้ำกันระหว่างท้าย merged กับต้น current
+        # Find overlapping part between end of merged and start of current
         best_overlap = 0
         for j in range(1, min(len(merged), len(current)) + 1):
             if merged[-j:] == current[:j]:
                 best_overlap = j
         
-        # รวมโดยตัดส่วนที่ซ้ำออก
+        # Merge by removing the overlapping part
         merged += current[best_overlap:]
     
     return merged
 
 def merge_overlapped_text_fuzzy(texts:list, threshold:int=85) -> str:
+    """Merge overlapped text segments using fuzzy matching.
+    
+    Args:
+        texts (list): List of text segments to merge
+        threshold (int): Similarity threshold for fuzzy matching (default: 85)
+        
+    Returns:
+        str: Merged text with fuzzy overlaps removed
+    """
     if not texts:
         return ""
 
@@ -40,7 +57,7 @@ def merge_overlapped_text_fuzzy(texts:list, threshold:int=85) -> str:
             tail = merged[-j:]
             head = current[:j]
 
-            # ใช้ fuzzy ratio แทน exact match
+            # Use fuzzy ratio instead of exact match
             similarity = fuzz.ratio(tail, head)
             if similarity >= threshold:  
                 best_overlap = j
