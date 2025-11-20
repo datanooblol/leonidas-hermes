@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import RecordButton from '../atoms/RecordButton';
 import StatusDisplay from '../atoms/StatusDisplay';
+import TranscriptionDisplay, { TranscriptionItem } from '../atoms/TranscriptionDisplay';
 
 export default function AudioRecorder() {
   const [isRecording, setIsRecording] = useState(false);
@@ -11,6 +12,8 @@ export default function AudioRecorder() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [sessionFiles, setSessionFiles] = useState<any[]>([]);
+  const [transcriptions, setTranscriptions] = useState<TranscriptionItem[]>([]);
+  const [chunkCounter, setChunkCounter] = useState(0);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -75,6 +78,32 @@ export default function AudioRecorder() {
       body: formData,
     });
     
+    // ส่งไป transcribe
+    const transcribeFormData = new FormData();
+    transcribeFormData.append('audio', audioBlob);
+    
+    try {
+      const transcribeResponse = await fetch('/api/transcribe', {
+        method: 'POST',
+        body: transcribeFormData,
+      });
+      
+      const transcribeData = await transcribeResponse.json();
+      
+      // เพิ่ม transcription ใหม่
+      const newTranscription: TranscriptionItem = {
+        id: `${Date.now()}_${chunkCounter}`,
+        text: transcribeData.text,
+        timestamp: transcribeData.timestamp,
+        chunkId: chunkCounter + 1
+      };
+      
+      setTranscriptions(prev => [...prev, newTranscription]);
+      setChunkCounter(prev => prev + 1);
+    } catch (error) {
+      console.error('Transcription error:', error);
+    }
+    
     // Reload sessions after saving
     loadSessions();
   };
@@ -125,6 +154,8 @@ export default function AudioRecorder() {
       setIsRecording(true);
       isRecordingRef.current = true;
       setDuration(0);
+      setTranscriptions([]);
+      setChunkCounter(0);
 
       // Start timer
       timerRef.current = setInterval(() => {
@@ -155,6 +186,7 @@ export default function AudioRecorder() {
 
   return (
     <div className="flex flex-col items-center space-y-6 p-8">
+      {/* Transcription Display */}
       <StatusDisplay 
         isRecording={isRecording} 
         duration={duration} 
@@ -168,7 +200,8 @@ export default function AudioRecorder() {
       <div className="text-sm text-gray-500">
         Recording in 2-second WAV chunks
       </div>
-      
+      <TranscriptionDisplay transcriptions={transcriptions} />
+
       {/* Sessions List */}
       <div className="w-full max-w-md mt-8">
         {!selectedSession ? (
