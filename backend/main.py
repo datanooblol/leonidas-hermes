@@ -11,6 +11,7 @@ import json
 import os
 from memory import MemoryFactory, create_memory_backend
 from backend.audio_processing.overlatp_to_transcribe import Overlap2Transcribe
+from backend.audio_processing.preprocessing import deduplicate_exact_match
 
 ol2t = Overlap2Transcribe()
 voice_memory = create_memory_backend("duckdb", db_path="duckdb_session_audio.db")
@@ -124,10 +125,15 @@ async def websocket_endpoint(websocket: WebSocket):
                 chunk_id = voice_memory.create_chunk(ws_session_id, str(wav_file), 0)
                 records = voice_memory.get_last_n_chunks(ws_session_id, 2)
                 transcription = ol2t.run(records)
+                transcription_id = voice_memory.create_transcription(chunk_id, transcription)
+                # get by session or chunks better?
+                last_transcriptions = voice_memory.get_transcriptions_by_chunks([rec.chunk_id for rec in records])
+                latest, previous = last_transcriptions[0].transcribed_text, last_transcriptions[1].transcribed_text
+                deduplicated_transcription = deduplicate_exact_match(latest, previous)
                 # Send result back
                 await websocket.send_text(json.dumps({
                     "timestamp": timestamp,
-                    "transcription": f"{transcription}",
+                    "transcription": deduplicated_transcription,
                     "status": "success"
                 }))
                 
