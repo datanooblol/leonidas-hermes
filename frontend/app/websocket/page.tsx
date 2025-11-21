@@ -3,12 +3,7 @@
 import { useState } from "react";
 import WebSocketAudioRecorder from "../../components/WebSocketAudioRecorder";
 import WebSocketTranscriptionDisplay from "../../components/WebSocketTranscriptionDisplay";
-
-interface TranscriptionResult {
-  timestamp: string;
-  transcription: string;
-  status: string;
-}
+import { TranscriptionResult } from "../../types";
 
 export default function WebSocketPage() {
   const [transcriptions, setTranscriptions] = useState<TranscriptionResult[]>(
