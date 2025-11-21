@@ -97,6 +97,12 @@ WHERE chunk_id = ?
 ORDER BY start_offset_ms ASC
 """
 
+GET_TRANSCRIPTIONS_BY_CHUNKS = """
+SELECT * FROM transcriptions 
+WHERE chunk_id IN ({}) 
+ORDER BY created_at DESC
+"""
+
 GET_TRANSCRIPTIONS_BY_SESSION = """
 SELECT t.* FROM transcriptions t
 JOIN audio_chunks c ON t.chunk_id = c.chunk_id
@@ -143,6 +149,6 @@ SELECT t.*
 FROM transcriptions t
 JOIN audio_chunks c ON t.chunk_id = c.chunk_id
 WHERE c.session_id = ?
-ORDER BY c.sequence_number DESC, t.created_at DESC
+ORDER BY t.created_at DESC
 LIMIT ?
 """

@@ -88,7 +88,7 @@ class DuckDBManager(MemoryBackend):
             end_time_ms=row[5],
             created_at=row[6]
         )
-    
+
     def get_chunks_by_session(self, session_id: str) -> List[Chunk]:
         results = self.execute(GET_CHUNKS_BY_SESSION, [session_id])
         return [Chunk(
@@ -144,6 +144,20 @@ class DuckDBManager(MemoryBackend):
             created_at=row[6]
         ) for row in results]
     
+    def get_transcriptions_by_chunks(self, chunk_ids: List[str]) -> List[Transcription]:
+        placeholders = ','.join(['?' for _ in chunk_ids])
+        query = GET_TRANSCRIPTIONS_BY_CHUNKS.format(placeholders)        
+        results = self.execute(query, chunk_ids)
+        return [Transcription(
+            transcription_id=row[0],
+            chunk_id=row[1],
+            transcribed_text=row[2],
+            confidence_score=row[3],
+            start_offset_ms=row[4],
+            end_offset_ms=row[5],
+            created_at=row[6]
+        ) for row in results]
+
     def get_transcriptions_by_session(self, session_id: str) -> List[Transcription]:
         results = self.execute(GET_TRANSCRIPTIONS_BY_SESSION, [session_id])
         return [Transcription(
