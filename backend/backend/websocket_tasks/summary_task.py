@@ -82,7 +82,6 @@ class SummaryProcessor(BaseWebsocketWorker):
                             "type": "summary",
                             "summary": summary
                         }))
-                        print(f"Summary generated: {summary[:100]}...")
                 except Exception as e:
                     print(f"Summary worker error: {e}")
         
@@ -108,7 +107,7 @@ class SummaryProcessor(BaseWebsocketWorker):
                     # CONTEXT: Get all previous summaries for conversation history
                     summaries = context.summaries
                     
-                    print("Queuing summary for processing...")
+                    # print("Queuing summary for processing...")
                     
                     # QUEUE THE WORK: Put data in queue for background worker
                     # This is non-blocking - we don't wait for summarization to complete

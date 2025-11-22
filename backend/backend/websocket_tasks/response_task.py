@@ -2,7 +2,7 @@ from backend.websocket_tasks.base import BaseWebsocketWorker, Context, WebSocket
 import json
 from backend.audio_processing.preprocessing import deduplicate_exact_match
 
-class ResponseProcessor(BaseWebsocketWorker):
+class TranscriptionResponseProcessor(BaseWebsocketWorker):
     def __init__(self, voice_memory):
         self.voice_memory = voice_memory
     

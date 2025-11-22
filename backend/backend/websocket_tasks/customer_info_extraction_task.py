@@ -1,7 +1,6 @@
 from .base import BaseWebsocketWorker, Context, WebSocket, CancelledError
 import json
 import asyncio
-from backend.llms.ollama import OllamaLLM, OpenAIOutputMessage
 from backend.llms.bedrock import BedrockNova
 from backend.llms.base import UserMessage
 from toon import decode
@@ -13,26 +12,29 @@ class CustomerInfo(BaseModel):
     """Data model for customer information that we want to extract"""
     age: Optional[int] = Field(default=None, description="Customer's age")
     income_per_month: Optional[int] = Field(default=None, description="Customer's income per month")
-    has_life_policy: Optional[bool] = Field(default=None, description="Customer has life insurance policy")
-    has_health_policy: Optional[bool] = Field(default=None, description="Customer has health insurance policy")
-    has_accident_policy: Optional[bool] = Field(default=None, description="Customer has accident insurance policy")
 
 system_prompt = """\
 # PERSONA
-You are the best customer information extractor who can carefully extract a customer's information.
+You are an expert customer information extractor for real-time conversation analysis.
+
+# CONTEXT
+You will receive partial conversation transcripts that may be incomplete or fragmented. Extract customer information even from partial mentions.
 
 # INSTRUCTION
-- read TEXT carefully
-- extract information including: age, income per month, having life policy|health|accident or not
+- Read TEXT carefully (this is a 10-second audio chunk from ongoing conversation)
+- Extract ONLY if information is clearly mentioned
+- Do NOT guess or infer information
+- Extract: age, monthly income
 
-Return only extracted information in the format below:
+# EXAMPLES
+- "I'm 35 years old" → age: 35
+- "I make about 5000 a month" → income_per_month: 5000
+- "My salary is 80k per year" → income_per_month: 6667
+
+Return ONLY extracted information:
 ```toon
-age: "a customer age in positive number, default=null"
-income_per_month: "a customer's income in positive number, default=null"
-has_life_policy: "a boolean, default=null"
-has_health_policy: "a boolean, default=null"
-has_accident_policy: "a boolean, default=null"
-```
+age: "customer age as positive integer, default=null"
+income_per_month: "monthly income as positive integer, default=null"
 """
 
 model_id = "us.amazon.nova-micro-v1:0"
@@ -49,16 +51,13 @@ class InformationExtractionProcessor(BaseWebsocketWorker):
         This is the SLOW part that we want to run in background
         """
         try:
-            print(f"Calling LLM with text length: {len(text)}")
             # Call LLM - this takes 1-3 seconds (BLOCKING)
             response = self.llm.run(system_prompt, [UserMessage(content=text)])
-            print(f"LLM response received: {response.content[:100]}...")
             
             # Parse the structured response from LLM
             data = parse_blockcode(response.content, "toon")
             data = decode(data)
             data = CustomerInfo(**data)
-            print(f"Parsed data: {data.model_dump()}")
             return data.model_dump()
         except Exception as e:
             print(f"Extraction error: {e}")
@@ -99,7 +98,6 @@ class InformationExtractionProcessor(BaseWebsocketWorker):
                     if info:
                         # Merge new info with existing customer data
                         context.update_customer_information(info)
-                        print("End extraction:", context.customer_information)
                         
                         # Send updated customer info to frontend
                         await ws.send_text(json.dumps({
@@ -129,7 +127,7 @@ class InformationExtractionProcessor(BaseWebsocketWorker):
                     # Example: if index=2, get chunks [2,3,4,5,6]
                     text = "".join(context.transcription_texts[index:index+length])
                     
-                    print(f"Queuing extraction for processing... (index={index}, length={length})")
+                    # print(f"Queuing extraction for processing... (index={index}, length={length})")
                     
                     # QUEUE THE WORK: Put text in queue for background worker
                     # This is non-blocking - we don't wait for extraction to complete
