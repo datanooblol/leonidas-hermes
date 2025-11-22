@@ -31,8 +31,8 @@ export default function WebSocketPage() {
     messages.filter((m) => m.type === "information").pop()
       ?.customer_information || {};
   // Add this to see what messages are being received:
-  console.log("All messages:", messages);
-  console.log("Customer info:", customerInfo);
+  // console.log("All messages:", messages);
+  // console.log("Customer info:", customerInfo);
 
   return (
     <div className="min-h-screen bg-gray-100">

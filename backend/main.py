@@ -2,13 +2,18 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 import os
-from memory import MemoryFactory, create_memory_backend # type: ignore
+from memory import create_memory_backend # type: ignore
 from backend.audio_processing.overlatp_to_transcribe import Overlap2Transcribe
 from backend.websocket_tasks.base import Context
 from backend.websocket_tasks.transcription_task import TranscriptionProcessor
-from backend.websocket_tasks.response_task import ResponseProcessor
+from backend.websocket_tasks.response_task import TranscriptionResponseProcessor
 from backend.websocket_tasks.summary_task import SummaryProcessor
-from backend.websocket_tasks.extraction_task import InformationExtractionProcessor
+from backend.websocket_tasks.customer_info_extraction_task import InformationExtractionProcessor, CustomerInfo
+from backend.websocket_tasks.information_extraction_task import ExtractionProcessor
+from backend.llms.bedrock import BedrockNova
+from backend.prompt_hub import PromptHub
+
+
 ol2t = Overlap2Transcribe()
 voice_memory = create_memory_backend("duckdb", db_path="duckdb_session_audio.db")
 ws_session_id = None
@@ -41,15 +46,23 @@ async def websocket_endpoint(websocket: WebSocket):
         print(f"Created WebSocket session: {ws_session_id}")
     
     processor = TranscriptionProcessor(voice_memory, ol2t, ws_session_id)
-    response_processor = ResponseProcessor(voice_memory)
-    
     transcribe_task = asyncio.create_task(processor.run_worker(websocket, context))
-    return_task = asyncio.create_task(response_processor.run_worker(websocket, context))
+    
+    transcription_response_processor = TranscriptionResponseProcessor(voice_memory)
+    transcription_response_task = asyncio.create_task(transcription_response_processor.run_worker(websocket, context))
     
     summary_processor = SummaryProcessor(voice_memory)
     summary_task = asyncio.create_task(summary_processor.run_worker(websocket, context))
     
-    information_extraction_processor = InformationExtractionProcessor(voice_memory)
+    
+    information_extraction_processor = ExtractionProcessor(
+        llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
+        system_prompt=PromptHub().extract_customer_information,
+        DataModel=CustomerInfo,
+        updateFunc=context.update_customer_information,
+        returnData=dict(type="information", customer_information=context.customer_information)
+    )
+    
     information_extraction_task = asyncio.create_task(information_extraction_processor.run_worker(websocket, context))
     try:
         while True:
@@ -63,7 +76,7 @@ async def websocket_endpoint(websocket: WebSocket):
     finally:
         # Cancel background tasks
         transcribe_task.cancel()
-        return_task.cancel()
+        transcription_response_task.cancel()
         summary_task.cancel()
         information_extraction_task.cancel()
         
@@ -71,7 +84,7 @@ async def websocket_endpoint(websocket: WebSocket):
         try:
             await asyncio.gather(
                 transcribe_task, 
-                return_task, 
+                transcription_response_task, 
                 summary_task, 
                 information_extraction_task,
                 return_exceptions=True
@@ -83,11 +96,6 @@ async def websocket_endpoint(websocket: WebSocket):
 async def health_check():
     """Health check endpoint"""
     return {"status": "ok", "message": "Transcription API is running"}
-
-@app.get("/memory")
-async def memory_check():
-    """Health check endpoint"""
-    return {"status": "ok", "message": MemoryFactory.list_available_backends()}
 
 if __name__ == "__main__":
     import uvicorn
