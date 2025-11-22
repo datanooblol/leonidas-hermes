@@ -91,10 +91,10 @@ class ExtractionProcessor(BaseWebsocketWorker):
                     if data:
                         # Merge new info with existing customer data
                         # context.updateFunc(data)
-                        self.updateFunc(data)
-                        
-                        # Send updated customer info to frontend
-                        await ws.send_text(json.dumps(self.returnData))
+                        is_update = self.updateFunc(data)
+                        if is_update:
+                            # Send updated customer info to frontend
+                            await ws.send_text(json.dumps(self.returnData))
                 except Exception as e:
                     print(f"Extraction worker error: {e}")
         
