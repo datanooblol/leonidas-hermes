@@ -9,6 +9,7 @@ class Context:
         self.audio_queue = Queue()
         self.transcription_queue = Queue()
         self.transcription_texts = []
+        self.summaries = []
 class BaseWebsocketWorker(ABC):
     @abstractmethod
     async def run_worker(self, ws: WebSocket, context:Context): pass
