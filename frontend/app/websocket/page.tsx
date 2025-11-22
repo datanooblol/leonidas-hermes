@@ -4,12 +4,14 @@ import { useState } from "react";
 import WebSocketAudioRecorder from "../../components/WebSocketAudioRecorder";
 import WebSocketTranscriptionDisplay from "../../components/WebSocketTranscriptionDisplay";
 import WebSocketSummaryDisplay from "../../components/WebSocketSummaryDisplay";
+import CustomerInfoDisplay from "../../components/CustomerInfoDisplay";
 
 interface WebSocketMessage {
-  type?: "transcription" | "summary";
+  type?: "transcription" | "summary" | "information";
   timestamp?: string;
   transcription?: string;
   summary?: string;
+  customer_information?: any;
   status?: string;
   error?: string;
 }
@@ -21,12 +23,20 @@ export default function WebSocketPage() {
     setMessages((prev) => [...prev, message]);
   };
 
-  const transcriptions = messages.filter(m => m.type === "transcription");
-  const summaries = messages.filter(m => m.type === "summary");
+  const transcriptions = messages.filter((m) => m.type === "transcription");
+  const summaries = messages.filter((m) => m.type === "summary");
+  // const customerInfo =
+  //   messages.find((m) => m.type === "information")?.customer_information || {};
+  const customerInfo =
+    messages.filter((m) => m.type === "information").pop()
+      ?.customer_information || {};
+  // Add this to see what messages are being received:
+  console.log("All messages:", messages);
+  console.log("Customer info:", customerInfo);
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="container mx-auto px-4 py-8">
+      <div className="px-4 py-8">
         <header className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
             WebSocket Real-time Transcription
@@ -37,22 +47,22 @@ export default function WebSocketPage() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* WebSocket Audio Recorder Component */}
-          <div>
-            <WebSocketAudioRecorder
-              onNewTranscription={handleNewMessage}
-            />
-          </div>
+        {/* Floating Microphone */}
+        <WebSocketAudioRecorder onNewTranscription={handleNewMessage} />
 
-          {/* WebSocket Transcription Display Component */}
-          <div>
-            <WebSocketTranscriptionDisplay transcriptions={transcriptions} />
-          </div>
+        {/* Main Layout - Full Width */}
+        <div className="w-full px-4">
+          <div className="grid grid-cols-2 gap-6 w-full">
+            {/* Left Column - Transcription & Summary */}
+            <div className="space-y-6">
+              <WebSocketTranscriptionDisplay transcriptions={transcriptions} />
+              <WebSocketSummaryDisplay summaries={summaries} />
+            </div>
 
-          {/* WebSocket Summary Display Component */}
-          <div>
-            <WebSocketSummaryDisplay summaries={summaries} />
+            {/* Right Column - Customer Information */}
+            <div>
+              <CustomerInfoDisplay customerInfo={customerInfo} />
+            </div>
           </div>
         </div>
 
