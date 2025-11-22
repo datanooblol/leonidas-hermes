@@ -7,6 +7,7 @@ from backend.audio_processing.overlatp_to_transcribe import Overlap2Transcribe
 from backend.websocket_tasks.base import Context
 from backend.websocket_tasks.transcription_task import TranscriptionProcessor
 from backend.websocket_tasks.response_task import ResponseProcessor
+from backend.websocket_tasks.summary_task import SummaryProcessor
 
 ol2t = Overlap2Transcribe()
 voice_memory = create_memory_backend("duckdb", db_path="duckdb_session_audio.db")
@@ -45,6 +46,8 @@ async def websocket_endpoint(websocket: WebSocket):
     transcribe_task = asyncio.create_task(processor.run_worker(websocket, context))
     return_task = asyncio.create_task(response_processor.run_worker(websocket, context))
     
+    summary_processor = SummaryProcessor(voice_memory)
+    summary_task = asyncio.create_task(summary_processor.run_worker(websocket, context))
     try:
         while True:
             # Receive audio data
@@ -58,10 +61,16 @@ async def websocket_endpoint(websocket: WebSocket):
         # Cancel background tasks
         transcribe_task.cancel()
         return_task.cancel()
+        summary_task.cancel()
         
         # Wait for tasks to complete cancellation
         try:
-            await asyncio.gather(transcribe_task, return_task, return_exceptions=True)
+            await asyncio.gather(
+                transcribe_task, 
+                return_task, 
+                summary_task, 
+                return_exceptions=True
+                )
         except Exception:
             pass
 

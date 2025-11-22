@@ -3,16 +3,26 @@
 import { useState } from "react";
 import WebSocketAudioRecorder from "../../components/WebSocketAudioRecorder";
 import WebSocketTranscriptionDisplay from "../../components/WebSocketTranscriptionDisplay";
-import { TranscriptionResult } from "../../types";
+import WebSocketSummaryDisplay from "../../components/WebSocketSummaryDisplay";
+
+interface WebSocketMessage {
+  type?: "transcription" | "summary";
+  timestamp?: string;
+  transcription?: string;
+  summary?: string;
+  status?: string;
+  error?: string;
+}
 
 export default function WebSocketPage() {
-  const [transcriptions, setTranscriptions] = useState<TranscriptionResult[]>(
-    []
-  );
+  const [messages, setMessages] = useState<WebSocketMessage[]>([]);
 
-  const handleNewTranscription = (result: TranscriptionResult) => {
-    setTranscriptions((prev) => [...prev, result]);
+  const handleNewMessage = (message: WebSocketMessage) => {
+    setMessages((prev) => [...prev, message]);
   };
+
+  const transcriptions = messages.filter(m => m.type === "transcription");
+  const summaries = messages.filter(m => m.type === "summary");
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -27,17 +37,22 @@ export default function WebSocketPage() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* WebSocket Audio Recorder Component */}
           <div>
             <WebSocketAudioRecorder
-              onNewTranscription={handleNewTranscription}
+              onNewTranscription={handleNewMessage}
             />
           </div>
 
           {/* WebSocket Transcription Display Component */}
           <div>
             <WebSocketTranscriptionDisplay transcriptions={transcriptions} />
+          </div>
+
+          {/* WebSocket Summary Display Component */}
+          <div>
+            <WebSocketSummaryDisplay summaries={summaries} />
           </div>
         </div>
 
