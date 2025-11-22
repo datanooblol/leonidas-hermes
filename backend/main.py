@@ -7,12 +7,15 @@ from backend.audio_processing.overlatp_to_transcribe import Overlap2Transcribe
 from backend.websocket_tasks.base import Context
 from backend.websocket_tasks.transcription_task import TranscriptionProcessor
 from backend.websocket_tasks.response_task import TranscriptionResponseProcessor
-from backend.websocket_tasks.summary_task import SummaryProcessor
-from backend.websocket_tasks.customer_info_extraction_task import InformationExtractionProcessor, CustomerInfo
+# from backend.websocket_tasks.summary_task import SummaryProcessor
+# from backend.websocket_tasks.customer_info_extraction_task import InformationExtractionProcessor, CustomerInfo
+from backend.websocket_tasks.extraction_data_model import CustomerInfo, CustomerInterest
 from backend.websocket_tasks.information_extraction_task import ExtractionProcessor
 from backend.llms.bedrock import BedrockNova
 from backend.prompt_hub import PromptHub
 
+# suppress transciption message
+os.environ['TQDM_DISABLE'] = '1'
 
 ol2t = Overlap2Transcribe()
 voice_memory = create_memory_backend("duckdb", db_path="duckdb_session_audio.db")
@@ -51,8 +54,8 @@ async def websocket_endpoint(websocket: WebSocket):
     transcription_response_processor = TranscriptionResponseProcessor(voice_memory)
     transcription_response_task = asyncio.create_task(transcription_response_processor.run_worker(websocket, context))
     
-    summary_processor = SummaryProcessor(voice_memory)
-    summary_task = asyncio.create_task(summary_processor.run_worker(websocket, context))
+    # summary_processor = SummaryProcessor(voice_memory)
+    # summary_task = asyncio.create_task(summary_processor.run_worker(websocket, context))
     
     
     information_extraction_processor = ExtractionProcessor(
@@ -60,10 +63,25 @@ async def websocket_endpoint(websocket: WebSocket):
         system_prompt=PromptHub().extract_customer_information,
         DataModel=CustomerInfo,
         updateFunc=context.update_customer_information,
-        returnData=dict(type="information", customer_information=context.customer_information)
+        returnData=dict(type="information", customer_information=context.customer_information),
+        length=5,
+        offset=2,
+        sleep=1
     )
     
     information_extraction_task = asyncio.create_task(information_extraction_processor.run_worker(websocket, context))
+    interest_extraction_processor = ExtractionProcessor(
+        llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
+        system_prompt=PromptHub().extract_customer_interest,
+        DataModel=CustomerInterest,
+        updateFunc=context.update_customer_interest,
+        returnData=dict(type="interest", customer_interest=context.customer_interest),
+        length=5,
+        offset=2,
+        sleep=1
+    )
+    
+    interest_extraction_task = asyncio.create_task(interest_extraction_processor.run_worker(websocket, context))
     try:
         while True:
             # Receive audio data
@@ -77,16 +95,18 @@ async def websocket_endpoint(websocket: WebSocket):
         # Cancel background tasks
         transcribe_task.cancel()
         transcription_response_task.cancel()
-        summary_task.cancel()
+        # summary_task.cancel()
         information_extraction_task.cancel()
+        interest_extraction_task.cancel()
         
         # Wait for tasks to complete cancellation
         try:
             await asyncio.gather(
                 transcribe_task, 
                 transcription_response_task, 
-                summary_task, 
+                # summary_task, 
                 information_extraction_task,
+                interest_extraction_task,
                 return_exceptions=True
                 )
         except Exception:
