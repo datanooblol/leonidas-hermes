@@ -1,0 +1,28 @@
+stage: Greeting
+
+goal:
+  - gain permission to talk
+  - build initial trust and warmth
+  - confirm customer identity
+  - set expectations for call length
+
+do:
+  - use customer's name
+  - speak warmly and politely
+  - state purpose briefly
+  - ask for permission to continue
+
+avoid:
+  - jumping into product details too early
+  - speaking too fast
+  - using jargon
+
+collects:
+  - name
+  - best_time_to_call
+  - current_insurance_status
+
+objection_patterns:
+  - ไม่สะดวกคุย
+  - รีบอยู่
+  - ไม่สนใจ

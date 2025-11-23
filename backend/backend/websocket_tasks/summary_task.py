@@ -3,6 +3,7 @@ import json
 import asyncio
 from backend.llms.ollama import OllamaLLM, OpenAIOutputMessage
 from backend.llms.base import UserMessage
+import logging
 
 system_prompt = """\
 ระบุสัญญาณสำคัญจากบทสนทนา:
@@ -20,6 +21,9 @@ class SummaryProcessor(BaseWebsocketWorker):
         self.voice_memory = voice_memory
         # Initialize LLM for conversation analysis
         self.llm = OllamaLLM(model_name="gpt-oss:20b", OutputMessage=OpenAIOutputMessage)
+        self.logger = logging.getLogger(__name__)
+        # Initialize queue for background processing
+        self.summary_queue = asyncio.Queue()
 
     def summarize(self, summaries, texts):
         """
@@ -28,6 +32,7 @@ class SummaryProcessor(BaseWebsocketWorker):
         """
         try:
             # Build context from previous summaries (conversation history)
+            self.logger.info(f"Summarizing {len(texts)} texts")
             context = f"CONTEXT:\n\n{summaries[-1]}\n\n" if summaries else ""
             
             # Add new text to analyze
@@ -35,10 +40,45 @@ class SummaryProcessor(BaseWebsocketWorker):
             
             # Call LLM - this takes 1-3 seconds (BLOCKING)
             response = self.llm.run(system_prompt, [UserMessage(content=context+content)])
+            self.logger.info(f"Summary response: {response.content}")
             return response.content
         except Exception as e:
-            print(f"Summary error: {e}")
+            self.logger.error(f"Summary error: {e}")
             return ""  # Return empty string if summarization fails
+
+    async def summary_worker(self, ws: WebSocket, context: Context):
+        """
+        Background worker that processes summarization requests
+        This runs in parallel with the main loop
+        """
+        while True:
+            try:
+                # WAIT for summarization request (this blocks until request is available)
+                data = await self.summary_queue.get()
+                summaries = data["summaries"]  # Previous conversation summaries
+                texts = data["texts"]          # New text chunks to analyze
+                
+                # RUN SUMMARIZATION in thread pool to avoid blocking
+                # run_in_executor moves the slow LLM call to a separate thread
+                summary = await asyncio.get_event_loop().run_in_executor(
+                    None,  # Use default thread pool
+                    self.summarize,  # Function to run
+                    summaries,       # First argument
+                    texts           # Second argument
+                )
+                
+                # PROCESS RESULTS if summarization succeeded
+                if summary:
+                    # Add new summary to conversation history
+                    context.summaries.append(summary)
+                    
+                    # Send summary to frontend
+                    await ws.send_text(json.dumps({
+                        "type": "summary",
+                        "summary": summary
+                    }))
+            except Exception as e:
+                self.logger.error(f"Summary worker error: {e}")
 
     async def run_worker(self, ws: WebSocket, context: Context):
         """
@@ -47,47 +87,11 @@ class SummaryProcessor(BaseWebsocketWorker):
         """
         
         # === SETUP PHASE ===
-        summary_queue = asyncio.Queue()  # Queue to hold summarization requests
         last_processed_count = 0  # Track how many transcriptions we've processed
-        
-        # === BACKGROUND WORKER DEFINITION ===
-        async def summary_worker():
-            """
-            Background worker that processes summarization requests
-            This runs in parallel with the main loop
-            """
-            while True:
-                try:
-                    # WAIT for summarization request (this blocks until request is available)
-                    data = await summary_queue.get()
-                    summaries = data["summaries"]  # Previous conversation summaries
-                    texts = data["texts"]          # New text chunks to analyze
-                    
-                    # RUN SUMMARIZATION in thread pool to avoid blocking
-                    # run_in_executor moves the slow LLM call to a separate thread
-                    summary = await asyncio.get_event_loop().run_in_executor(
-                        None,  # Use default thread pool
-                        self.summarize,  # Function to run
-                        summaries,       # First argument
-                        texts           # Second argument
-                    )
-                    
-                    # PROCESS RESULTS if summarization succeeded
-                    if summary:
-                        # Add new summary to conversation history
-                        context.summaries.append(summary)
-                        
-                        # Send summary to frontend
-                        await ws.send_text(json.dumps({
-                            "type": "summary",
-                            "summary": summary
-                        }))
-                except Exception as e:
-                    print(f"Summary worker error: {e}")
         
         # === START BACKGROUND WORKER ===
         # This creates a separate async task that runs in parallel
-        asyncio.create_task(summary_worker())
+        asyncio.create_task(self.summary_worker(ws, context))
         
         # === MAIN SCHEDULING LOOP ===
         # This loop decides WHEN to summarize and WHAT text to send
@@ -107,11 +111,9 @@ class SummaryProcessor(BaseWebsocketWorker):
                     # CONTEXT: Get all previous summaries for conversation history
                     summaries = context.summaries
                     
-                    # print("Queuing summary for processing...")
-                    
                     # QUEUE THE WORK: Put data in queue for background worker
                     # This is non-blocking - we don't wait for summarization to complete
-                    await summary_queue.put({
+                    await self.summary_queue.put({
                         "summaries": summaries,
                         "texts": texts
                     })
@@ -124,28 +126,23 @@ class SummaryProcessor(BaseWebsocketWorker):
                 await asyncio.sleep(2.0)
                 
         except CancelledError:
-            print("Summary stopped.")
+            self.logger.info("Summary stopped.")
 
 """
-KEY DIFFERENCES FROM EXTRACTION:
+REFACTORED BENEFITS:
 
-1. TRIGGER FREQUENCY:
-   - Extraction: Every 3 transcriptions (more frequent)
-   - Summary: Every 5 transcriptions (less frequent, needs more text)
+1. CLEANER ARCHITECTURE:
+   - Queue initialized once in __init__
+   - summary_worker as separate method (reusable)
+   - Less nested code in run_worker
 
-2. TEXT SELECTION:
-   - Extraction: Always last 5 chunks (sliding window)
-   - Summary: Sequential chunks with overlap (progressive analysis)
+2. BETTER MAINTAINABILITY:
+   - Worker logic separated from scheduling logic
+   - Easier to test individual components
+   - Clear separation of concerns
 
-3. CONTEXT HANDLING:
-   - Extraction: Merges with existing customer data
-   - Summary: Builds conversation history over time
-
-4. DATA STRUCTURE:
-   - Extraction: Structured data (age, income, etc.)
-   - Summary: Free-form text analysis
-
-SAME PATTERN, DIFFERENT PURPOSE:
-Both use the background queue pattern to prevent LLM blocking,
-but they process different types of information at different frequencies.
+3. SAME PATTERN AS EXTRACTION:
+   - Both use self.queue in __init__
+   - Both have separate worker methods
+   - Consistent architecture across workers
 """
