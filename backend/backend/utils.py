@@ -45,7 +45,7 @@ def setup_logger(level=logging.DEBUG):
     logging.getLogger('urllib3').setLevel(logging.WARNING)
     logging.getLogger('boto3').setLevel(logging.WARNING)
     
-    print("✅ Development logging enabled (DEBUG level) - Console + logs/development.log")
+    print("✅ Development logging enabled (DEBUG level) - Console")
 
 def setup_development_log():
     """Setup logging for development - see everything"""
