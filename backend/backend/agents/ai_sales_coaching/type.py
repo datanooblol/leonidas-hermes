@@ -52,16 +52,6 @@ class Action(BaseModel):
     action: str = Field(default="")
     suggested_lines: List[str] = Field(default_factory=list)
 
-class SuggestedSalesStage(BaseModel):
-    """
-    Output from stage classification with signals and recommended actions.
-    """
-    stage: StageType = Field(default=StageType.UNKNOWN, description="Recommended next stage")
-    signals: List[str] = Field(default_factory=list, description="Evidence that triggered this stage")
-    suggested_actions: List[Action] = Field(default_factory=list)
-    objection_detected: bool = Field(default=False, description="Whether objection was detected")
-    objection_resolution: Optional[ObjectionResolution] = Field(default=None, description="How to handle objection resolution")
-
 class Stage(BaseModel):
     """
     Configuration for each sales stage with goals, behaviors, and data collection requirements.
@@ -90,10 +80,3 @@ class StageTransition(BaseModel):
     to_stage: StageType
     required_signals: List[str] = Field(description="Signals needed to trigger transition")
     required_collections: List[str] = Field(default_factory=list, description="Data that must be collected before transition")
-
-class ClassifiedStage(BaseModel):
-    """
-    Output from stage classification with signals and recommended actions.
-    """
-    stage: StageType = Field(default=StageType.UNKNOWN, description="A classified stage, default Unknown")
-    signals: List[str] = Field(default_factory=list, description="Evidence that triggered this stage")
