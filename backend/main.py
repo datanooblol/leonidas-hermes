@@ -13,6 +13,10 @@ from backend.websocket_tasks.extraction_data_model import CustomerInfo, Customer
 from backend.websocket_tasks.information_extraction_task import ExtractionProcessor
 from backend.llms.bedrock import BedrockNova
 from backend.prompt_hub import PromptHub
+from backend.utils import setup_logger
+import logging
+
+setup_logger(logging.DEBUG)
 
 # suppress transciption message
 os.environ['TQDM_DISABLE'] = '1'
@@ -59,6 +63,7 @@ async def websocket_endpoint(websocket: WebSocket):
     
     
     information_extraction_processor = ExtractionProcessor(
+        extraction_task="customer_information_extraction",
         llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
         system_prompt=PromptHub().extract_customer_information,
         DataModel=CustomerInfo,
@@ -68,9 +73,10 @@ async def websocket_endpoint(websocket: WebSocket):
         offset=2,
         sleep=1
     )
-    
     information_extraction_task = asyncio.create_task(information_extraction_processor.run_worker(websocket, context))
+    
     interest_extraction_processor = ExtractionProcessor(
+        extraction_task="customer_interest_extraction",
         llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
         system_prompt=PromptHub().extract_customer_interest,
         DataModel=CustomerInterest,
@@ -80,7 +86,6 @@ async def websocket_endpoint(websocket: WebSocket):
         offset=2,
         sleep=1
     )
-    
     interest_extraction_task = asyncio.create_task(interest_extraction_processor.run_worker(websocket, context))
     try:
         while True:
