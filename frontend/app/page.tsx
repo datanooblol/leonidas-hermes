@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+import RecordingPage from './src/components/pages/RecordingPage';
 
 export default function Home() {
-  redirect('/recording');
+  return <RecordingPage />;
 }

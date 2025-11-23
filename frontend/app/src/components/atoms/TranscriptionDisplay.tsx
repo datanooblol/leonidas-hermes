@@ -1,5 +1,4 @@
 interface TranscriptionItem {
-  id: string;
   text: string;
   timestamp: number;
   chunkId: number;
@@ -18,7 +17,7 @@ export default function TranscriptionDisplay({ transcriptions }: TranscriptionDi
           <p className="text-gray-500 text-center py-8">Start recording to see transcriptions...</p>
         ) : (
           transcriptions.map((item) => (
-            <div key={item.id} className="bg-gray-50 p-3 rounded border-l-4 border-blue-400">
+            <div key={`${item.timestamp}_${item.chunkId}`} className="bg-gray-50 p-3 rounded border-l-4 border-blue-400">
               <div className="flex justify-between items-start mb-1">
                 <span className="text-xs text-gray-500">Chunk {item.chunkId}</span>
                 <span className="text-xs text-gray-400">

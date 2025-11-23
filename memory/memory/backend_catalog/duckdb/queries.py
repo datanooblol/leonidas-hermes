@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS transcriptions (
 # SESSION OPERATIONS
 # ============================================================================
 
-INSERT_SESSION = "INSERT INTO sessions (session_id) VALUES (?)"
+INSERT_SESSION = "INSERT INTO sessions (session_id, created_at) VALUES (?, ?)"
 
 GET_SESSION = "SELECT * FROM sessions WHERE session_id = ?"
 
@@ -59,8 +59,8 @@ DELETE_SESSION = "DELETE FROM sessions WHERE session_id = ?"
 # ============================================================================
 
 INSERT_CHUNK = """
-INSERT INTO audio_chunks (chunk_id, session_id, sequence_number, audio_path, start_time_ms, end_time_ms) 
-VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO audio_chunks (chunk_id, session_id, sequence_number, audio_path, start_time_ms, end_time_ms, created_at) 
+VALUES (?, ?, ?, ?, ?, ?, ?)
 """
 
 GET_CHUNK = "SELECT * FROM audio_chunks WHERE chunk_id = ?"
@@ -87,8 +87,8 @@ DELETE_CHUNKS_BY_SESSION = "DELETE FROM audio_chunks WHERE session_id = ?"
 # ============================================================================
 
 INSERT_TRANSCRIPTION = """
-INSERT INTO transcriptions (transcription_id, chunk_id, transcribed_text, confidence_score, start_offset_ms, end_offset_ms) 
-VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO transcriptions (transcription_id, chunk_id, transcribed_text, confidence_score, start_offset_ms, end_offset_ms, created_at) 
+VALUES (?, ?, ?, ?, ?, ?, ?)
 """
 
 GET_TRANSCRIPTIONS_BY_CHUNK = """

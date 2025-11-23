@@ -31,7 +31,7 @@ class DuckDBManager(MemoryBackend):
     
     def create_session(self) -> str:
         session = Session()
-        self.execute(INSERT_SESSION, [session.session_id])
+        self.execute(INSERT_SESSION, [session.session_id, session.created_at.isoformat()])
         return session.session_id
     
     def get_session(self, session_id: str) -> Optional[Session]:
@@ -70,7 +70,7 @@ class DuckDBManager(MemoryBackend):
         )
         self.execute(INSERT_CHUNK, [
             chunk.chunk_id, chunk.session_id, chunk.sequence_number,
-            chunk.audio_path, chunk.start_time_ms, chunk.end_time_ms
+            chunk.audio_path, chunk.start_time_ms, chunk.end_time_ms, chunk.created_at.isoformat()
         ])
         return chunk.chunk_id
     
@@ -128,7 +128,7 @@ class DuckDBManager(MemoryBackend):
         )
         self.execute(INSERT_TRANSCRIPTION, [
             transcription.transcription_id, transcription.chunk_id, transcription.transcribed_text,
-            transcription.confidence_score, transcription.start_offset_ms, transcription.end_offset_ms
+            transcription.confidence_score, transcription.start_offset_ms, transcription.end_offset_ms, transcription.created_at.isoformat()
         ])
         return transcription.transcription_id
     
