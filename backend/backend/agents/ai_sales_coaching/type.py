@@ -19,6 +19,9 @@ class StageType(StrEnum):
     PITCH = "Pitch"
     CLOSING = "Closing"
     FOLLOW_UP = "Follow Up"
+
+    # Fallback mechanism
+    UNKNOWN = "Unknown"
     
     # Interrupt stage
     OBJECTION = "Objection"
@@ -53,7 +56,7 @@ class SuggestedSalesStage(BaseModel):
     """
     Output from stage classification with signals and recommended actions.
     """
-    stage: StageType = Field(default=StageType.GREETING)
+    stage: StageType = Field(default=StageType.UNKNOWN, description="Recommended next stage")
     signals: List[str] = Field(default_factory=list, description="Evidence that triggered this stage")
     suggested_actions: List[Action] = Field(default_factory=list)
     objection_detected: bool = Field(default=False, description="Whether objection was detected")
@@ -63,7 +66,7 @@ class Stage(BaseModel):
     """
     Configuration for each sales stage with goals, behaviors, and data collection requirements.
     """
-    stage: StageType = Field(default=StageType.GREETING)
+    stage: StageType = Field(default=StageType.UNKNOWN, description="Name of the stage")
     goal: List[str] = Field(description="Key outcomes to accomplish in this stage")
     do: List[str] = Field(description="Best practices to follow")
     avoid: List[str] = Field(description="Behaviors to prevent")
@@ -87,3 +90,10 @@ class StageTransition(BaseModel):
     to_stage: StageType
     required_signals: List[str] = Field(description="Signals needed to trigger transition")
     required_collections: List[str] = Field(default_factory=list, description="Data that must be collected before transition")
+
+class ClassifiedStage(BaseModel):
+    """
+    Output from stage classification with signals and recommended actions.
+    """
+    stage: StageType = Field(default=StageType.UNKNOWN, description="A classified stage, default Unknown")
+    signals: List[str] = Field(default_factory=list, description="Evidence that triggered this stage")
