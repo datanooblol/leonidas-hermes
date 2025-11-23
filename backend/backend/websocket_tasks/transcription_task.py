@@ -16,10 +16,8 @@ class TranscriptionProcessor(BaseWebsocketWorker):
         timestamp = str(int(time.time() * 1000))
         
         try:
-            # Convert audio to mono WAV with proper sample rate
+            # Convert audio to WAV
             audio_segment = AudioSegment.from_file(BytesIO(audio_bytes))
-            # Convert to mono and set sample rate to 16kHz
-            audio_segment = audio_segment.set_channels(1).set_frame_rate(16000)
             wav_file = self.out_dir / f"{timestamp}.wav"
             audio_segment.export(wav_file, format="wav")
             
