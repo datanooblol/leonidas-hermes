@@ -33,3 +33,24 @@ class PromptHub:
     @property
     def sales_coaching(self):
         return Path("backend/prompt_hub/sales_coaching.md").read_text(encoding='utf-8')
+    
+    
+    @property
+    def objection_handling_agent(self):
+        return Path("backend/prompt_hub/objection_handling_agent.md").read_text(encoding='utf-8')
+
+    @property
+    def greeting_agent(self):
+        return Path("backend/prompt_hub/greeting_agent.md").read_text(encoding='utf-8')
+    
+    @property
+    def discovery_agent(self):
+        return Path("backend/prompt_hub/discovery_agent.md").read_text(encoding='utf-8')
+    
+    @property
+    def pitch_agent(self):
+        return Path("backend/prompt_hub/pitch_agent.md").read_text(encoding='utf-8')
+    
+    @property
+    def closing_agent(self):
+        return Path("backend/prompt_hub/closing_agent.md").read_text(encoding='utf-8')
