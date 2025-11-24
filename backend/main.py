@@ -9,12 +9,14 @@ from backend.websocket_tasks.transcription_task import TranscriptionProcessor
 from backend.websocket_tasks.response_task import TranscriptionResponseProcessor
 # from backend.websocket_tasks.summary_task import SummaryProcessor
 # from backend.websocket_tasks.customer_info_extraction_task import InformationExtractionProcessor, CustomerInfo
-from backend.websocket_tasks.extraction_data_model import CustomerInfo, CustomerInterest
+# from backend.websocket_tasks.extraction_data_model import CustomerInfo, CustomerInterest
 from backend.websocket_tasks.information_extraction_task import ExtractionProcessor
 from backend.llms.bedrock import BedrockNova
 from backend.prompt_hub import PromptHub
 from backend.utils import setup_logger
 import logging
+from backend.agents.extractor import Extractor
+from backend.agents.ai_sales_coaching.extract_data_model import CustomerInfo, CustomerInterest, AgentCheckList
 
 setup_logger(logging.DEBUG)
 
@@ -45,7 +47,29 @@ async def websocket_endpoint(websocket: WebSocket):
     print("WebSocket connection established")
     
     context = Context()
-    
+    BedrockNova(model_id="us.amazon.nova-micro-v1:0")
+
+    information_agent = Extractor(
+        agent_name="customer_information_extractor_agent",
+        llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
+        system_prompt=PromptHub().extract_customer_information,
+        DataModel=CustomerInfo,
+        format="toon"
+    )
+    interest_agent = Extractor(
+        agent_name="customer_interest_extractor_agent",
+        llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
+        system_prompt=PromptHub().extract_customer_interest,
+        DataModel=CustomerInterest,
+        format="toon"
+    )
+    checklist_agent = Extractor(
+        agent_name="checklist_extractor_agent",
+        llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
+        system_prompt=PromptHub().extract_agent_checklist,
+        DataModel=AgentCheckList,
+        format="toon"
+    )
     # Start background tasks
     global ws_session_id
     if ws_session_id is None:
@@ -64,9 +88,10 @@ async def websocket_endpoint(websocket: WebSocket):
     
     information_extraction_processor = ExtractionProcessor(
         extraction_task="customer_information_extraction",
-        llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
-        system_prompt=PromptHub().extract_customer_information,
-        DataModel=CustomerInfo,
+        # llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
+        llm=information_agent,
+        # system_prompt=PromptHub().extract_customer_information,
+        # DataModel=CustomerInfo,
         updateFunc=context.update_customer_information,
         returnData=dict(type="information", customer_information=context.customer_information),
         length=5,
@@ -77,9 +102,10 @@ async def websocket_endpoint(websocket: WebSocket):
     
     interest_extraction_processor = ExtractionProcessor(
         extraction_task="customer_interest_extraction",
-        llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
-        system_prompt=PromptHub().extract_customer_interest,
-        DataModel=CustomerInterest,
+        llm=interest_agent,
+        # llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
+        # system_prompt=PromptHub().extract_customer_interest,
+        # DataModel=CustomerInterest,
         updateFunc=context.update_customer_interest,
         returnData=dict(type="interest", customer_interest=context.customer_interest),
         length=5,

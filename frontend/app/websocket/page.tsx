@@ -27,9 +27,9 @@ export default function WebSocketPage() {
   const summaries = messages.filter((m) => m.type === "summary");
   // const customerInfo =
   //   messages.find((m) => m.type === "information")?.customer_information || {};
-  // const customerInfo =
-  //   messages.filter((m) => m.type === "information").pop()
-  //     ?.customer_information || {};
+  const customerInfo =
+    messages.filter((m) => m.type === "information").pop()
+      ?.customer_information || {};
   // Add this to see what messages are being received:
   console.log("All messages:", messages);
   // console.log("Customer info:", customerInfo);
