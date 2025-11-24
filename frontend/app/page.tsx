@@ -1,5 +1,5 @@
-import RecordingPage from './src/components/pages/RecordingPage';
+import SalesDashboardPage from './src/components/pages/SalesDashboardPage';
 
 export default function Home() {
-  return <RecordingPage />;
+  return <SalesDashboardPage />;
 }

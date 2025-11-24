@@ -1,16 +1,13 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-
-interface TranscriptionResult {
-  text: string;
-  timestamp: number;
-  chunkId: number;
-}
+import { TranscriptionResult, CustomerInfo, CustomerInterest } from '../types';
 
 export function useWebSocket() {
   const [isConnected, setIsConnected] = useState(false);
   const [transcriptions, setTranscriptions] = useState<TranscriptionResult[]>([]);
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({});
+  const [customerInterest, setCustomerInterest] = useState<CustomerInterest>({});
   const wsRef = useRef<WebSocket | null>(null);
 
   const connect = useCallback(() => {
@@ -23,12 +20,17 @@ export function useWebSocket() {
     
     wsRef.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.transcription) {
+      
+      if (data.type === 'transcription' && data.transcription) {
         setTranscriptions(prev => [...prev, {
           text: data.transcription,
           timestamp: data.timestamp || Date.now(),
           chunkId: data.chunkId || prev.length + 1
         }]);
+      } else if (data.type === 'information' && data.customer_information) {
+        setCustomerInfo(data.customer_information);
+      } else if (data.type === 'interest' && data.customer_interest) {
+        setCustomerInterest(data.customer_interest);
       }
     };
   }, []);
@@ -48,5 +50,5 @@ export function useWebSocket() {
     return () => wsRef.current?.close();
   }, []);
 
-  return { isConnected, transcriptions, connect, sendAudio, disconnect };
+  return { isConnected, transcriptions, customerInfo, customerInterest, connect, sendAudio, disconnect };
 }
