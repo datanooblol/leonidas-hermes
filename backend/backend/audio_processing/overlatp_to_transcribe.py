@@ -1,7 +1,6 @@
 from pydub import AudioSegment
 from pathlib import Path
 import tempfile
-import time
 from backend.audio_processing.preprocessing import prepare_audio
 from backend.audio_processing.load_model import load_model
 
