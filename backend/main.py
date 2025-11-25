@@ -13,6 +13,7 @@ from backend.prompt_hub import PromptHub
 from backend.utils import setup_logger
 import logging
 from backend.agents.extractor import Extractor
+# refer data spec here
 from backend.agents.ai_sales_coaching.extract_data_model import CustomerInfo, CustomerInterest, AgentCheckList
 
 setup_logger(logging.DEBUG)
@@ -47,21 +48,21 @@ async def websocket_endpoint(websocket: WebSocket):
         agent_name="customer_information_extractor_agent",
         llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
         system_prompt=PromptHub().extract_customer_information,
-        DataModel=CustomerInfo,
+        DataModel=CustomerInfo, # data spec
         format="toon"
     )
     interest_agent = Extractor(
         agent_name="customer_interest_extractor_agent",
         llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
         system_prompt=PromptHub().extract_customer_interest,
-        DataModel=CustomerInterest,
+        DataModel=CustomerInterest, # data spec
         format="toon"
     )
     checklist_agent = Extractor(
         agent_name="checklist_extractor_agent",
         llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
         system_prompt=PromptHub().extract_agent_checklist,
-        DataModel=AgentCheckList,
+        DataModel=AgentCheckList, # data spec
         format="toon"
     )
     # Start background tasks
@@ -108,6 +109,8 @@ async def websocket_endpoint(websocket: WebSocket):
         sleep=1
     )
     checklist_extraction_task = asyncio.create_task(checklist_extraction_processor.run_worker(websocket, context))
+    # this is for each stage guide using the same schema: dict(type="guide", stage_name=stage_name, guide=context.guide)
+    # this is for products: dict(type="suggeted_products", products=context.suggested_products)
     try:
         while True:
             # Receive audio data
