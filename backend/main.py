@@ -16,7 +16,7 @@ from backend.agents.extractor import Extractor
 # refer data spec here
 from backend.agents.ai_sales_coaching.extract_data_model import CustomerInfo, CustomerInterest, AgentCheckList
 
-setup_logger(logging.DEBUG)
+setup_logger(logging.INFO)
 api_logger = logging.getLogger("backend.main")
 
 ol2t = Overlap2Transcribe()
@@ -112,11 +112,38 @@ async def websocket_endpoint(websocket: WebSocket):
     # this is for each stage guide using the same schema: dict(type="guide", stage_name=stage_name, guide=context.guide)
     # this is for products: dict(type="suggeted_products", products=context.suggested_products)
     try:
+        # while True:
+        #     # Receive audio data
+        #     data = await websocket.receive_bytes()
+        #     # Put audio data in queue for processing
+        #     await context.audio_queue.put(data)
         while True:
-            # Receive audio data
-            data = await websocket.receive_bytes()
-            # Put audio data in queue for processing
-            await context.audio_queue.put(data)
+            message = await websocket.receive()
+            
+            if message["type"] == "websocket.receive":
+                if "bytes" in message:
+                    # This will handle the existing audio blobs
+                    data = message["bytes"]
+                    await context.audio_queue.put(data)
+                elif "text" in message:
+                    # Handle stage control messages
+                    import json
+                    try:
+                        stage_data = json.loads(message["text"])
+                        # it can pass here
+                        if stage_data.get("type") == "guide":
+                            stage_name = stage_data.get("stage_name")
+                            context.stage = stage_name
+                            api_logger.info(f"Stage changed to: {stage_name}")
+                            
+                            # Send confirmation back to frontend
+                            await websocket.send_text(json.dumps({
+                                "type": "guide",
+                                "stage_name": stage_name,
+                                "message": f"Stage set to {stage_name}"
+                            }))
+                    except json.JSONDecodeError:
+                        api_logger.warning("Invalid JSON in text message")
             
     except WebSocketDisconnect:
         api_logger.info("WebSocket connection closed")

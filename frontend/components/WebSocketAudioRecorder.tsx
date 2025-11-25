@@ -5,10 +5,12 @@ import { Mic } from "lucide-react";
 
 interface WebSocketAudioRecorderProps {
   onNewTranscription: (result: any) => void;
+  onWebSocketReady?: (ws: WebSocket) => void;
 }
 
 export default function WebSocketAudioRecorder({
   onNewTranscription,
+  onWebSocketReady,
 }: WebSocketAudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -24,6 +26,10 @@ export default function WebSocketAudioRecorder({
       onNewTranscription(result);
     };
     websocketRef.current = ws;
+    
+    if (onWebSocketReady) {
+      onWebSocketReady(ws);
+    }
   };
 
   const startRecording = async () => {
