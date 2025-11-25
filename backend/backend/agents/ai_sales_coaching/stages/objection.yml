@@ -1,0 +1,25 @@
+stage: Objection
+
+goal:
+  - validate concerns
+  - reframe value
+  - offer alternatives if needed
+  - reduce friction for decision
+
+do:
+  - acknowledge feelings
+  - clarify objection by repeating it back
+  - provide comparison or alternative
+  - offer next-step options
+
+avoid:
+  - dismissing the objection
+  - arguing with the customer
+  - using pressure tactics
+
+collects:
+  - objection_type
+  - resolution_attempted
+  - customer_condition_to_move_forward
+
+objection_patterns: []

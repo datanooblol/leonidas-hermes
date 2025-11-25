@@ -1,7 +1,6 @@
 from pydub import AudioSegment
 from pathlib import Path
 import tempfile
-import time
 from backend.audio_processing.preprocessing import prepare_audio
 from backend.audio_processing.load_model import load_model
 
@@ -38,7 +37,7 @@ class Overlap2Transcribe:
         with tempfile.TemporaryDirectory(dir=self.temp_dir) as tmpdir:
             file_path = Path(tmpdir) / "audio.wav"
             audio.export(file_path, format="wav")
-            # prep_path = prepare_audio(file_path)
+            file_path = prepare_audio(file_path)
             transcriptions = model.transcribe(audio=[str(file_path)])
             # time.sleep(2)
             return transcriptions[0].text if transcriptions else ""

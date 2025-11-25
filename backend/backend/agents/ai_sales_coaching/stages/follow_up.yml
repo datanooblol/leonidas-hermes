@@ -1,0 +1,25 @@
+stage: Follow Up
+
+goal:
+  - confirm customer satisfaction
+  - ensure documents were received
+  - answer remaining questions
+  - request referrals politely
+
+do:
+  - check if everything is clear
+  - offer help
+  - thank customer for trust
+  - ask for referral gently
+
+avoid:
+  - aggressive selling
+  - long unnecessary calls
+  - pushing extra insurance
+
+collects:
+  - satisfaction_level
+  - referral_consent
+  - referral_info
+
+objection_patterns: []

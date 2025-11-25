@@ -3,14 +3,16 @@ from pathlib import Path
 import time
 from pydub import AudioSegment
 from io import BytesIO
+import logging
 
 class TranscriptionProcessor(BaseWebsocketWorker):
-    def __init__(self, voice_memory, ol2t, ws_session_id):
+    def __init__(self, voice_memory, ol2t, ws_session_id, logger=None):
         self.voice_memory = voice_memory
         self.ol2t = ol2t
         self.ws_session_id = ws_session_id
         self.out_dir = Path("./out_ws")
         self.out_dir.mkdir(exist_ok=True, parents=True)
+        self.logger = logging.getLogger(__name__) if logger is None else logger
     
     async def process(self, audio_bytes: bytes, context: Context):
         timestamp = str(int(time.time() * 1000))
@@ -32,9 +34,9 @@ class TranscriptionProcessor(BaseWebsocketWorker):
                 "records": records
             })
             
-            print(f"Processed WebSocket audio: {len(audio_bytes)} bytes")
+            self.logger.info(f"Processed WebSocket audio: {len(audio_bytes)} bytes")
         except Exception as e:
-            print(f"Transcription error: {e}")
+            self.logger.error(f"Transcription error: {e}")
 
     async def run_worker(self, ws: WebSocket, context: Context):
         try:
@@ -42,4 +44,4 @@ class TranscriptionProcessor(BaseWebsocketWorker):
                 audio_bytes = await context.audio_queue.get()
                 await self.process(audio_bytes, context)
         except CancelledError:
-            print("Transcription stopped.")
+            self.logger.info("Transcription stopped.")
