@@ -2,38 +2,52 @@
 
 import CustomerInfoCard from '../molecules/CustomerInfoCard';
 import JourneyStageCard from '../molecules/JourneyStageCard';
-import SentimentCard from '../molecules/SentimentCard';
 import SalesChecklistCard from '../molecules/SalesChecklistCard';
-import RecommendationsCard from '../molecules/RecommendationsCard';
+import InterestDetectionCard from '../molecules/InterestDetectionCard';
+import ProductMatchCard from '../molecules/ProductMatchCard';
 import AudioRecorder from './AudioRecorder';
-import { CustomerInfo } from '../../types';
+import { CustomerInfo, CustomerInterest } from '../../types';
 
 interface SalesDashboardProps {
   customerInfo?: CustomerInfo;
+  customerInterest?: CustomerInterest;
 }
 
-export default function SalesDashboard({ customerInfo }: SalesDashboardProps) {
+export default function SalesDashboard({ customerInfo, customerInterest }: SalesDashboardProps) {
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Top Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-          <CustomerInfoCard customerInfo={customerInfo} />
-          <JourneyStageCard />
-          <SentimentCard />
-        </div>
-        
-        {/* Bottom Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <SalesChecklistCard />
-          <RecommendationsCard />
-        </div>
-        
-        {/* Audio Recording */}
-        <div className="mt-4">
-          <div className="bg-white border-2 border-gray-800 rounded-lg p-4">
-            <h3 className="font-bold text-sm mb-3">Audio Recording</h3>
-            <AudioRecorder />
+    <div className="min-h-screen bg-gray-100 p-4 text-gray-800">
+      <div className="max-w-7xl mx-auto">
+        <div className="border-4 border-gray-800 bg-white p-4">
+          <div className="text-center font-bold text-lg mb-4 border-b-2 border-gray-800 pb-2">
+            AGENT ASSIST DASHBOARD
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Left Panel */}
+            <div className="space-y-4">
+              <div className="border-2 border-gray-800 p-2">
+                <div className="font-bold text-sm mb-2 text-center">LEFT PANEL</div>
+                <CustomerInfoCard customerInfo={customerInfo} />
+              </div>
+              
+              <InterestDetectionCard customerInterest={customerInterest} />
+              <SalesChecklistCard />
+            </div>
+            
+            {/* Center Panel */}
+            <div className="border-2 border-gray-800 p-2">
+              <div className="font-bold text-sm mb-2 text-center">JOURNEY / GUIDE</div>
+              <JourneyStageCard />
+              <div className="mt-4">
+                <AudioRecorder />
+              </div>
+            </div>
+            
+            {/* Right Panel */}
+            <div className="border-2 border-gray-800 p-2">
+              <div className="font-bold text-sm mb-2 text-center">PRODUCT MATCH</div>
+              <ProductMatchCard />
+            </div>
           </div>
         </div>
       </div>

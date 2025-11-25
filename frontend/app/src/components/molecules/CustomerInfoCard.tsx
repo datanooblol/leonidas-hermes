@@ -34,18 +34,22 @@ export default function CustomerInfoCard({ customerInfo }: CustomerInfoCardProps
         </div>
         
         <div className="flex items-center gap-2">
-          <span>☎</span>
-          <span className="font-medium">Tel:</span>
-          <span>{customerInfo?.tel || 'XXX-XXX'}</span>
+          <span>💰</span>
+          <span className="font-medium">Income:</span>
+          <span>{customerInfo?.income_per_month ? `${customerInfo.income_per_month.toLocaleString()} / month` : 'XXXX / month'}</span>
         </div>
         
-        {customerInfo?.income_per_month && (
-          <div className="flex items-center gap-2">
-            <span>💰</span>
-            <span className="font-medium">Income:</span>
-            <span>{customerInfo.income_per_month.toLocaleString()} THB</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <span>💍</span>
+          <span className="font-medium">Marital:</span>
+          <span>{customerInfo?.marital_status || 'ไม่ระบุ'}</span>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <span>👶</span>
+          <span className="font-medium">Children:</span>
+          <span>{customerInfo?.number_of_children ?? 0}</span>
+        </div>
       </div>
     </div>
   );

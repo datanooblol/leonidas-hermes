@@ -13,10 +13,23 @@ export function useWebSocket() {
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
+    console.log('Attempting WebSocket connection to ws://localhost:8000/ws');
     wsRef.current = new WebSocket('ws://localhost:8000/ws');
     
-    wsRef.current.onopen = () => setIsConnected(true);
-    wsRef.current.onclose = () => setIsConnected(false);
+    wsRef.current.onopen = () => {
+      console.log('WebSocket connected successfully');
+      setIsConnected(true);
+    };
+    
+    wsRef.current.onclose = (event) => {
+      console.log('WebSocket closed:', event.code, event.reason);
+      setIsConnected(false);
+    };
+    
+    wsRef.current.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setIsConnected(false);
+    };
     
     wsRef.current.onmessage = (event) => {
       const data = JSON.parse(event.data);

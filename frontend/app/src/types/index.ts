@@ -3,6 +3,8 @@ export interface CustomerInfo {
   income_per_month?: number;
   name?: string;
   tel?: string;
+  marital_status?: 'ไม่ระบุ' | 'โสด' | 'สมรส' | 'หย่าร้าง' | 'หม้าย';
+  number_of_children?: number;
 }
 
 export interface CustomerInterest {
@@ -22,4 +24,19 @@ export interface TranscriptionResult {
   text: string;
   timestamp: number;
   chunkId: number;
+}
+
+export interface JourneyStage {
+  stage: 'Greeting' | 'Discovery' | 'Pitch';
+  action: string;
+  explanation: string[];
+  signals: string[];
+  lines: string[];
+}
+
+export interface InsurancePlan {
+  name: string;
+  ageRange: string;
+  premium: string;
+  benefits: string[];
 }
