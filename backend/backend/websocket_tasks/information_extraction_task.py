@@ -4,6 +4,7 @@ import asyncio
 from typing import Callable
 import logging
 from backend.agents.extractor import Extractor
+from functools import partial
 
 class ExtractionProcessor(BaseWebsocketWorker):
     """
@@ -49,12 +50,13 @@ class ExtractionProcessor(BaseWebsocketWorker):
                 # WAIT for text to be queued (this blocks until text is available)
                 text = await self.extraction_queue.get()
                 
+                self.logger.debug(f"LLM input TEXT: {text}")
                 # RUN EXTRACTION in thread pool to avoid blocking
                 # run_in_executor moves the slow LLM call to a separate thread
                 data = await asyncio.get_event_loop().run_in_executor(
                     None,  # Use default thread pool
                     self.llm.run,  # Function to run
-                    [dict(role="user", content=text)]   # Argument to pass
+                    [dict(role="user", content=text)],   # Argument to pass
                 )
                 
                 # PROCESS RESULTS if extraction succeeded

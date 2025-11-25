@@ -28,7 +28,7 @@ You will receive partial conversation transcripts that may be incomplete or frag
 
 Return ONLY extracted information:
 
-```json
+```toon
 life_insurance: "boolean, customer's interest in life insurance, default=null"
 health_insurance: "boolean, customer's interest in health insurance, default=null"
 critical_illness: "boolean, customer's interest in critical illness coverage, default=null"

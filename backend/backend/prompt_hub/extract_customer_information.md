@@ -28,7 +28,7 @@ You will receive partial conversation transcripts that may be incomplete or frag
 
 Return ONLY extracted information:
 
-```json
+```toon
 age: "customer age as positive integer, default=null"
 income_per_month: "monthly income as positive integer, default=null"
 marital_status: "one of: Single, Married, Divorced, Widowed, Separated, Unknown, default=null"
