@@ -13,7 +13,7 @@ class CustomerInfo(BaseModel):
     """Data model for customer information that we want to extract"""
     age: Optional[int] = Field(default=None, description="Customer's age")
     income_per_month: Optional[int] = Field(default=None, description="Customer's income per month")
-    marital_status: Optional[Literal["Single", "Married", "Divorced", "Widowed", "Separated", "Unknown"]] = Field(default=None, description="Customer's marital status based on one of these options (Single, Married, Divorced, Widowed, Separated, Unknown)")
+    marital_status: Optional[Literal["Single", "Married", "Divorced", "Widowed", "Separated"]] = Field(default=None, description="Customer's marital status based on one of these options (Single, Married, Divorced, Widowed, Separated, Unknown)")
     number_of_children: Optional[int] = Field(default=None, description="Number of children the customer has")
 
 class CustomerInterest(BaseModel):
@@ -48,6 +48,14 @@ class AgentCheckList(BaseModel):
     agent_introduced: Optional[bool] = Field(default=None, description="Agent introduced themselves by name")
     company_mentioned: Optional[bool] = Field(default=None, description="Agent mentioned company name")
     permission_asked: Optional[bool] = Field(default=None, description="Agent asked permission to continue call")
+    def is_complete(self) -> bool:
+        """Check if all checklist items are completed (True)"""
+        return all([
+            self.agent_introduced is True,
+            self.company_mentioned is True,
+            self.permission_asked is True
+        ])
+
 
 class Guide(BaseModel):
     action:Optional[str] = Field(default=None, description="Recommended action for the agent to take")

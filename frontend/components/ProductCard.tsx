@@ -28,9 +28,9 @@ export default function ProductCard({ products }: ProductCardProps) {
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm border">
       <h3 className="font-semibold text-lg mb-3 text-gray-800">Products</h3>
-      <div className="space-y-4">
+      <div className="flex flex-wrap gap-4">
         {products.map((product) => (
-          <div key={product.product_id} className="border rounded-lg p-4 bg-gray-50">
+          <div key={product.product_id} className="border rounded-lg p-4 bg-gray-50 flex-1 min-w-64">
             <h4 className="text-xl font-bold text-gray-900 mb-2">
               {product.product_name}
             </h4>

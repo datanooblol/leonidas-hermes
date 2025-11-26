@@ -59,9 +59,36 @@ class ExtractionProcessor(BaseWebsocketWorker):
                     self.llm.run,  # Function to run
                     [dict(role="user", content=text)],   # Argument to pass
                 )
-                
-                # PROCESS RESULTS if extraction succeeded
+                if self.extraction_task == "objection_handling_extraction":
+                    self.logger.info(f"Objection Extraction Output: {data}")
                 if data:
+                    # Handle objection detection
+                    if self.extraction_task == "objection_handling_extraction":
+                        import time
+                        
+                        # SKIP if in cooldown period
+                        if time.time() < context.objection_cooldown_until:
+                            continue  # Still in cooldown, skip detection
+                        
+                        # Check if objection detected (any non-null/non-empty fields)
+                        if any([data.action, data.explanation, data.signals, data.lines_to_say]):
+                            self.logger.info("Objection detected")
+                            # Save current stage before switching to objection
+                            if not context.in_objection:
+                                context.previous_stage = context.stage
+                                context.in_objection = True
+                            
+                            # Set cooldown period (45 seconds)
+                            context.objection_cooldown_until = time.time() + 45
+                            
+                            # Send objection alert to frontend
+                            await ws.send_text(json.dumps({
+                                "type": "objection",
+                                "guide": data.model_dump(),
+                                "previous_stage": context.previous_stage
+                            }))
+                        continue  # Continue monitoring for more objections
+                    
                     # Merge new info with existing customer data
                     is_update = self.updateFunc(data.model_dump())
                     if is_update:
@@ -70,6 +97,16 @@ class ExtractionProcessor(BaseWebsocketWorker):
                         # TRIGGER PRODUCT UPDATE if this is customer info extraction
                         if self.extraction_task == "customer_information_extraction":
                             await context.product_queue.put(context.customer_information)                        
+                        # In the processor after calling updateFunc
+                        if self.extraction_task == "agent_checklist_extraction":
+                            if context.stage == "greeting" and context.is_checklist_complete():
+                                self.logger.info("Checklist complete, moving to discovery stage.")
+                                context.stage = "discovery"
+                                await ws.send_text(json.dumps({
+                                    "type": "stage_change",
+                                    "stage": "discovery",
+                                    "reason": "checklist_complete"
+                                }))                            
             except Exception as e:
                 self.logger.error(f"Extraction worker error: {e}")
 
@@ -90,6 +127,16 @@ class ExtractionProcessor(BaseWebsocketWorker):
         # This loop decides WHEN to extract and WHAT text to send
         try:
             while True:
+                # STOP if checklist agent and stage is beyond greeting
+                if self.extraction_task == "agent_checklist_extraction" and context.stage != "greeting":
+                    self.logger.info("Checklist agent stopping - stage moved beyond greeting")
+                    return
+                if self.extraction_task == "customer_information_extraction" and context.is_information_complete():
+                    self.logger.info("Information complete - stopping information extractor")
+                    return
+                if self.extraction_task == "customer_interest_extraction" and context.is_interest_complete():
+                    self.logger.info("Interest complete - stopping interest extractor")
+                    return
                 # CHECK if we have enough transcriptions from current position
                 # We need at least 'length' chunks starting from 'index'
                 available_chunks = len(context.transcription_texts[index:])

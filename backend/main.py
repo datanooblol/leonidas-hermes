@@ -14,7 +14,7 @@ from backend.utils import setup_logger
 import logging
 from backend.agents.extractor import Extractor
 # refer data spec here
-from backend.agents.ai_sales_coaching.extract_data_model import CustomerInfo, CustomerInterest, AgentCheckList
+from backend.agents.ai_sales_coaching.extract_data_model import CustomerInfo, CustomerInterest, AgentCheckList, Guide
 import pandas as pd
 import json
 from backend.websocket_tasks.stage_guide_task import StageGuideProcessor
@@ -70,6 +70,13 @@ async def websocket_endpoint(websocket: WebSocket):
         DataModel=AgentCheckList, # data spec
         format="toon"
     )
+    objection_agent = Extractor(
+        agent_name="objection_handling_agent",
+        llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
+        system_prompt=PromptHub().objection_handling_agent,
+        DataModel=Guide, # data spec
+        format="json"
+    )
     # Start background tasks
     global ws_session_id
     if ws_session_id is None:
@@ -114,6 +121,18 @@ async def websocket_endpoint(websocket: WebSocket):
         sleep=1
     )
     checklist_extraction_task = asyncio.create_task(checklist_extraction_processor.run_worker(websocket, context))
+    
+    objection_extraction_processor = ExtractionProcessor(
+        extraction_task="objection_handling_extraction",
+        llm=objection_agent,
+        updateFunc=lambda x: False,  # No update needed, just detection
+        returnData=dict(type="objection"),
+        length=8,
+        offset=2,
+        sleep=2,
+    )
+    objection_extraction_task = asyncio.create_task(objection_extraction_processor.run_worker(websocket, context))
+    
     # Add this with other processors
     product_response_processor = ProductListResponseProcessor(products_df)  # your products data
     product_response_task = asyncio.create_task(product_response_processor.run_worker(websocket, context))
@@ -164,7 +183,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     # Handle stage control messages
                     try:
                         stage_data = json.loads(message["text"])
-                        # it can pass here
+                        # Handle stage control messages
                         if stage_data.get("type") == "guide":
                             stage_name = stage_data.get("stage_name")
                             context.stage = stage_name
@@ -175,6 +194,51 @@ async def websocket_endpoint(websocket: WebSocket):
                                 "type": "guide",
                                 "stage_name": stage_name,
                                 "message": f"Stage set to {stage_name}"
+                            }))
+                        
+                        # Handle manual information updates
+                        elif stage_data.get("type") == "manual_information_update":
+                            update_data = stage_data.get("data", {})
+                            context.customer_information.update(update_data)
+                            api_logger.info(f"Manual information update: {update_data}")
+                            
+                            # Send updated info back to frontend
+                            await websocket.send_text(json.dumps({
+                                "type": "information",
+                                "customer_information": context.customer_information
+                            }))
+                            
+                            # Trigger product update if information changed
+                            await context.product_queue.put(context.customer_information)
+                        
+                        # Handle manual interest updates
+                        elif stage_data.get("type") == "manual_interest_update":
+                            update_data = stage_data.get("data", {})
+                            context.customer_interest.update(update_data)
+                            api_logger.info(f"Manual interest update: {update_data}")
+                            
+                            # Send updated interest back to frontend
+                            await websocket.send_text(json.dumps({
+                                "type": "interest",
+                                "customer_interest": context.customer_interest
+                            }))
+                            
+                            # Trigger product update if interest changed
+                            await context.product_queue.put(context.customer_information)
+                        
+                        # Handle objection resolution
+                        elif stage_data.get("type") == "objection_resolved":
+                            api_logger.info(f"Objection resolved, returning to stage: {context.previous_stage}")
+                            context.stage = context.previous_stage
+                            context.in_objection = False
+                            # Reset cooldown to allow immediate new objection detection
+                            context.objection_cooldown_until = 0.0
+                            
+                            # Send stage restoration confirmation
+                            await websocket.send_text(json.dumps({
+                                "type": "stage_change",
+                                "stage": context.stage,
+                                "reason": "objection_resolved"
                             }))
                     except json.JSONDecodeError:
                         api_logger.warning("Invalid JSON in text message")
@@ -188,6 +252,7 @@ async def websocket_endpoint(websocket: WebSocket):
         information_extraction_task.cancel()
         interest_extraction_task.cancel()
         checklist_extraction_task.cancel()
+        objection_extraction_task.cancel()
         product_response_task.cancel()
         stage_guide_task.cancel()
         
@@ -199,6 +264,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 information_extraction_task,
                 interest_extraction_task,
                 checklist_extraction_task,
+                objection_extraction_task,
                 product_response_task,
                 stage_guide_task,
                 return_exceptions=True

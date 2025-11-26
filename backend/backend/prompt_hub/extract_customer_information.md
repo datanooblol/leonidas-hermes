@@ -31,6 +31,6 @@ Return ONLY extracted information:
 ```toon
 age: "customer age as positive integer, default=null"
 income_per_month: "monthly income as positive integer, default=null"
-marital_status: "one of: Single, Married, Divorced, Widowed, Separated, Unknown, default=null"
+marital_status: "one of: Single, Married, Divorced, Widowed, Separated, default=null"
 number_of_children: "number of children as positive integer, default=null"
 ```
