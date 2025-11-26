@@ -4,7 +4,10 @@ import { useState } from "react";
 import WebSocketAudioRecorder from "../../components/WebSocketAudioRecorder";
 import WebSocketTranscriptionDisplay from "../../components/WebSocketTranscriptionDisplay";
 import DebugComponent from "../../components/DebugComponent";
+import ProductCard from "../../components/ProductCard";
 import StageSelector from "../../components/StageSelector";
+import TranscriptionFloatingIcon from "../../components/TranscriptionFloatingIcon";
+import StageGuidePanel from "../../components/StageGuidePanel";
 
 interface WebSocketMessage {
   type?:
@@ -66,19 +69,11 @@ export default function WebSocketPage() {
           onWebSocketReady={handleWebSocketReady}
         />
 
-        <div className="grid grid-cols-2 gap-6">
-          {/* Left Column - Transcription */}
-          <div>
-            <WebSocketTranscriptionDisplay transcriptions={transcriptions} />
-          </div>
+        <TranscriptionFloatingIcon transcriptions={transcriptions} />
 
-          {/* Right Column - Stage Selector + Debug Data */}
+        <div className="grid grid-cols-2 gap-6">
+          {/* Left Column - Data Components */}
           <div className="space-y-4">
-            <StageSelector 
-              websocket={websocket} 
-              messages={messages}
-              onStageChange={handleStageChange}
-            />
             <DebugComponent
               type="information"
               data={latestInfo?.customer_information || null}
@@ -87,18 +82,16 @@ export default function WebSocketPage() {
               type="interest"
               data={latestInterest?.customer_interest || null}
             />
-            <DebugComponent
-              type="checklist"
-              data={latestChecklist?.agent_checklist || null}
+            <ProductCard
+              products={latestProducts?.products || null}
             />
-            <DebugComponent
-              type="guide"
-              data={shouldShowGuide ? latestGuide?.guide || null : null}
-              stageName={shouldShowGuide ? latestGuide?.stage_name : undefined}
-            />
-            <DebugComponent
-              type="products"
-              data={latestProducts?.products || null}
+          </div>
+          
+          {/* Right Column - Stage Guide Panel */}
+          <div>
+            <StageGuidePanel
+              websocket={websocket}
+              messages={messages}
             />
           </div>
         </div>
