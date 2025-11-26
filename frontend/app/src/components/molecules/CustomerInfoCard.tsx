@@ -22,12 +22,6 @@ export default function CustomerInfoCard({ customerInfo }: CustomerInfoCardProps
       
       <div className="space-y-2 text-sm">
         <div className="flex items-center gap-2">
-          <span>👤</span>
-          <span className="font-medium">Name:</span>
-          <span>{customerInfo?.name || 'XX'}</span>
-        </div>
-        
-        <div className="flex items-center gap-2">
           <span>🎂</span>
           <span className="font-medium">Age:</span>
           <span>{customerInfo?.age || 'XX'}</span>
@@ -42,7 +36,7 @@ export default function CustomerInfoCard({ customerInfo }: CustomerInfoCardProps
         <div className="flex items-center gap-2">
           <span>💍</span>
           <span className="font-medium">Marital:</span>
-          <span>{customerInfo?.marital_status || 'ไม่ระบุ'}</span>
+          <span>{customerInfo?.marital_status || 'Unknown'}</span>
         </div>
         
         <div className="flex items-center gap-2">

@@ -11,28 +11,31 @@ You will receive partial conversation transcripts that may be incomplete or frag
 - Read TEXT carefully (this is a 10-second audio chunk from ongoing conversation)
 - Extract ONLY if interest/goal is clearly mentioned or implied
 - Do NOT guess or infer information
-- Set to true if customer shows ANY interest in that insurance type
-- Focus on identifying customer needs to help match the best policy and close deals
+- Extract: insurance goals, coverage interests, budget concerns, urgency
 
 # EXAMPLES
 
-- "I'm interested in life insurance" → life_insurance: true
-- "I need health coverage" → health_insurance: true
-- "I'm worried about critical illness" → critical_illness: true
-- "What if I get into an accident?" → accident_insurance: true
-- "I need to plan for retirement" → retirement_planning: true
-- "Are there any tax benefits?" → tax_benefits: true
-- "I want tax deductions" → tax_benefits: true
-- "I don't need life insurance" → life_insurance: false
-- "Health insurance is not for me" → health_insurance: false
+- "I want to protect my family" → family_protection: true
+- "I need to leave something for my kids" → legacy_planning: true
+- "I want to save money for the future" → savings_goal: true
+- "Are there any tax benefits or deduction?" → tax_benefits: true
+- "I want to plan for my retirement" → retirement_planning: true
+- "I'm worried about getting sick" → health_coverage: true, critical_illness: true
+- "What if I get into an accident?" → accident_protection: true
+- "I'm on a tight budget" → budget_conscious: true
+- "I need this urgently" → immediate_need: true
 
 Return ONLY extracted information:
 
-```json
-life_insurance: "boolean, customer's interest in life insurance, default=null"
-health_insurance: "boolean, customer's interest in health insurance, default=null"
-critical_illness: "boolean, customer's interest in critical illness coverage, default=null"
-accident_insurance: "boolean, customer's interest in accident insurance, default=null"
-retirement_planning: "boolean, customer's interest in retirement planning, default=null"
-tax_benefits: "boolean, customer's interest in tax benefits, tax planning and tax deductions, default=null"
+```toon
+family_protection: "boolean, wants to protect family financially, default=null"
+legacy_planning: "boolean, wants to leave inheritance/legacy to loved ones, default=null"
+savings_goal: "boolean, wants to save money/build wealth, default=null"
+tax_benefits: "boolean, interested in tax advantages/deductions, default=null"
+retirement_planning: "boolean, wants to have money after retirement, default=null"
+health_coverage: "boolean, interested in health/medical coverage, default=null"
+accident_protection: "boolean, interested in accident/disability protection, default=null"
+critical_illness: "boolean, interested in critical illness coverage, default=null"
+budget_conscious: "boolean, concerned about premium costs, default=null"
+immediate_need: "boolean, has urgent/immediate need, default=null"
 ```

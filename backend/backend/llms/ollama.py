@@ -33,11 +33,11 @@ class LocalEmbedding:
         return response.json()
     
 class OllamaLLM:
-    def __init__(self, model_id, OutputMessage):
-        self.model_id = model_id
+    def __init__(self, model_name, OutputMessage):
+        self.model_name = model_name
         self.base_url = "http://localhost:11434/api/chat"
         self.OutputMessage = OutputMessage
 
     def run(self, system_prompt:str, messages:list):
-        response = requests.post(self.base_url, json={"model": self.model_id, "messages": [dict(role="system", content=system_prompt)]+messages, "stream":False})
+        response = requests.post(self.base_url, json={"model": self.model_name, "messages": [dict(role="system", content=system_prompt)]+messages, "stream":False})
         return self.OutputMessage(response.json(), 0)

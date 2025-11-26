@@ -13,9 +13,6 @@ class Context:
         self.summaries = []
         self.customer_information = {}
         self.customer_interest = {}
-        self.agent_checklist = {}
-        self.stage = None
-        self.objection = None
         self.information_history = []  # Track changes over time
 
     def update_customer_information(self, new_info):
@@ -61,47 +58,18 @@ class Context:
             # For other fields, always update with new info
             return True
 
-    # def update_customer_interest(self, new_info):
-    #     """Track evolving customer interests"""
-    #     changes_detected = False
-        
-    #     for field, value in new_info.items():
-    #         if value is not None:
-    #             # Interest can change over conversation
-    #             if field not in self.customer_interest or self.customer_interest[field] != value:
-    #                 self.customer_interest[field] = value
-    #                 changes_detected = True
-        
-    #     return changes_detected
-    
-    def _update_data(self, new_info, current_info):
+    def update_customer_interest(self, new_info):
+        """Track evolving customer interests"""
         changes_detected = False
         
         for field, value in new_info.items():
             if value is not None:
-                if field not in current_info or current_info[field] != value:
-                    current_info[field] = value
+                # Interest can change over conversation
+                if field not in self.customer_interest or self.customer_interest[field] != value:
+                    self.customer_interest[field] = value
                     changes_detected = True
         
         return changes_detected
-
-    def update_agent_checklist(self, new_info):
-        return self._update_data(new_info, self.agent_checklist)
-    
-    def update_customer_interest(self, new_info):
-        return self._update_data(new_info, self.customer_interest)
-
-    # def update_agent_checklist(self, new_info):
-    #     """Update agent checklist with new findings"""
-    #     changes_detected = False
-        
-    #     for field, value in new_info.items():
-    #         if value is not None:
-    #             if field not in self.agent_checklist or self.agent_checklist[field] != value:
-    #                 self.agent_checklist[field] = value
-    #                 changes_detected = True
-        
-    #     return changes_detected
 
 class BaseWebsocketWorker(ABC):
     @abstractmethod
