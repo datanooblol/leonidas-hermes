@@ -38,9 +38,6 @@ export default function SalesDashboard({ customerInfo, customerInterest }: Sales
             <div className="border-2 border-gray-800 p-2">
               <div className="font-bold text-sm mb-2 text-center">JOURNEY / GUIDE</div>
               <JourneyStageCard />
-              <div className="mt-4">
-                <AudioRecorder />
-              </div>
             </div>
             
             {/* Right Panel */}
@@ -49,6 +46,11 @@ export default function SalesDashboard({ customerInfo, customerInterest }: Sales
               <ProductMatchCard />
             </div>
           </div>
+        </div>
+        
+        {/* Audio Recording Section - Outside Frame */}
+        <div className="mt-4">
+          <AudioRecorder />
         </div>
       </div>
     </div>

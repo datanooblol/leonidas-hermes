@@ -97,22 +97,18 @@ export default function AudioRecorder() {
   };
 
   return (
-    <div className="flex flex-col items-center space-y-6 p-8">
-      {/* Transcription Display */}
-      <StatusDisplay 
-        isRecording={isRecording} 
-        duration={duration} 
-        sessionId={isConnected ? 'Connected' : 'Disconnected'}
-      />
+    <div className="flex flex-col items-center space-y-4">
+      {/* Simple Record Button */}
       <RecordButton 
         isRecording={isRecording}
         onStart={startRecording}
         onStop={stopRecording}
       />
-      <div className="text-sm text-gray-500">
-        {isConnected ? 'WebSocket Connected' : 'WebSocket Disconnected'}
+      
+      {/* Transcription Results - Below Frame */}
+      <div className="w-full max-w-4xl">
+        <TranscriptionDisplay transcriptions={transcriptions} />
       </div>
-      <TranscriptionDisplay transcriptions={transcriptions} />
     </div>
   );
 }

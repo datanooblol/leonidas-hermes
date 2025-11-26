@@ -8,6 +8,7 @@ export function useWebSocket() {
   const [transcriptions, setTranscriptions] = useState<TranscriptionResult[]>([]);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({});
   const [customerInterest, setCustomerInterest] = useState<CustomerInterest>({});
+  const [currentStage, setCurrentStage] = useState<string>('Greet');
   const wsRef = useRef<WebSocket | null>(null);
 
   const connect = useCallback(() => {
@@ -54,6 +55,26 @@ export function useWebSocket() {
     }
   }, []);
 
+  const sendStageUpdate = useCallback((stage: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      const message = JSON.stringify({
+        type: 'stage_update',
+        stage: stage
+      });
+      wsRef.current.send(message);
+    }
+  }, []);
+
+  const sendChecklistUpdate = useCallback((completedItems: string[]) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      const message = JSON.stringify({
+        type: 'checklist_update',
+        completed_items: completedItems
+      });
+      wsRef.current.send(message);
+    }
+  }, []);
+
   const disconnect = useCallback(() => {
     wsRef.current?.close();
     setTranscriptions([]);
@@ -63,5 +84,5 @@ export function useWebSocket() {
     return () => wsRef.current?.close();
   }, []);
 
-  return { isConnected, transcriptions, customerInfo, customerInterest, connect, sendAudio, disconnect };
+  return { isConnected, transcriptions, customerInfo, customerInterest, currentStage, setCurrentStage, connect, sendAudio, sendStageUpdate, sendChecklistUpdate, disconnect };
 }

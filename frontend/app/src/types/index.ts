@@ -6,12 +6,16 @@ export interface CustomerInfo {
 }
 
 export interface CustomerInterest {
-  life_insurance?: boolean;
-  health_insurance?: boolean;
-  critical_illness?: boolean;
-  accident_insurance?: boolean;
-  retirement_planning?: boolean;
+  family_protection?: boolean;
+  legacy_planning?: boolean;
+  savings_goal?: boolean;
   tax_benefits?: boolean;
+  retirement_planning?: boolean;
+  health_coverage?: boolean;
+  accident_protection?: boolean;
+  critical_illness?: boolean;
+  budget_conscious?: boolean;
+  immediate_need?: boolean;
 }
 
 export interface TranscriptionResult {
