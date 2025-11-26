@@ -29,6 +29,7 @@ class ExtractionProcessor(BaseWebsocketWorker):
             sleep:float=2.0,
             logger=None
         ):
+        self.extraction_task = extraction_task
         self.updateFunc = updateFunc
         self.returnData = returnData # {"type": "message type", "customer_information": context.customer_information}
         # Initialize the LLM client (Bedrock Nova for fast extraction)
@@ -66,6 +67,9 @@ class ExtractionProcessor(BaseWebsocketWorker):
                     if is_update:
                         # Send updated customer info to frontend
                         await ws.send_text(json.dumps(self.returnData))
+                        # TRIGGER PRODUCT UPDATE if this is customer info extraction
+                        if self.extraction_task == "customer_information_extraction":
+                            await context.product_queue.put(context.customer_information)                        
             except Exception as e:
                 self.logger.error(f"Extraction worker error: {e}")
 

@@ -6,7 +6,7 @@ from memory import create_memory_backend # type: ignore
 from backend.audio_processing.overlatp_to_transcribe import Overlap2Transcribe
 from backend.websocket_tasks.base import Context
 from backend.websocket_tasks.transcription_task import TranscriptionProcessor
-from backend.websocket_tasks.response_task import TranscriptionResponseProcessor
+from backend.websocket_tasks.response_task import TranscriptionResponseProcessor, ProductListResponseProcessor
 from backend.websocket_tasks.information_extraction_task import ExtractionProcessor
 from backend.llms.bedrock import BedrockNova
 from backend.prompt_hub import PromptHub
@@ -15,9 +15,14 @@ import logging
 from backend.agents.extractor import Extractor
 # refer data spec here
 from backend.agents.ai_sales_coaching.extract_data_model import CustomerInfo, CustomerInterest, AgentCheckList
+import pandas as pd
+import json
+from backend.websocket_tasks.stage_guide_task import StageGuideProcessor
 
 setup_logger(logging.INFO)
 api_logger = logging.getLogger("backend.main")
+
+products_df = pd.read_csv("./mock_dataset/mock_life_insurance_products.csv")
 
 ol2t = Overlap2Transcribe()
 voice_memory = create_memory_backend("duckdb", db_path="duckdb_session_audio.db")
@@ -109,14 +114,44 @@ async def websocket_endpoint(websocket: WebSocket):
         sleep=1
     )
     checklist_extraction_task = asyncio.create_task(checklist_extraction_processor.run_worker(websocket, context))
-    # this is for each stage guide using the same schema: dict(type="guide", stage_name=stage_name, guide=context.guide)
-    # this is for products: dict(type="suggeted_products", products=context.suggested_products)
+    # Add this with other processors
+    product_response_processor = ProductListResponseProcessor(products_df)  # your products data
+    product_response_task = asyncio.create_task(product_response_processor.run_worker(websocket, context))
+    
+    # Add after other processors
+    stage_guide_processor = StageGuideProcessor(
+        extraction_task="stage_guide_extraction",
+        llm=BedrockNova(model_id="us.amazon.nova-micro-v1:0"),
+        length=5,
+        offset=2,
+        sleep=1
+    )
+    stage_guide_task = asyncio.create_task(stage_guide_processor.run_worker(websocket, context))
+
+    # Send initial greeting stage info using Guide model structure
+    greeting_guide = {
+        "action": "Start with professional greeting and introduction",
+        "explanation": "Begin the call by establishing credibility and building rapport with the customer",
+        "signals": [
+            "Call just started",
+            "Customer answered the phone",
+            "No prior conversation context"
+        ],
+        "lines_to_say": [
+            "Hello, good morning/afternoon. My name is [Agent Name] from [Company Name].",
+            "I hope you're having a great day today.",
+            "I'm calling regarding life insurance options that might benefit you.",
+            "Do you have a few minutes to discuss this with me?"
+        ]
+    }
+    
+    await websocket.send_text(json.dumps({
+        "type": "guide",
+        "stage_name": "greeting",
+        "guide": greeting_guide
+    }))
+        
     try:
-        # while True:
-        #     # Receive audio data
-        #     data = await websocket.receive_bytes()
-        #     # Put audio data in queue for processing
-        #     await context.audio_queue.put(data)
         while True:
             message = await websocket.receive()
             
@@ -127,7 +162,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     await context.audio_queue.put(data)
                 elif "text" in message:
                     # Handle stage control messages
-                    import json
                     try:
                         stage_data = json.loads(message["text"])
                         # it can pass here
@@ -135,7 +169,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             stage_name = stage_data.get("stage_name")
                             context.stage = stage_name
                             api_logger.info(f"Stage changed to: {stage_name}")
-                            
+
                             # Send confirmation back to frontend
                             await websocket.send_text(json.dumps({
                                 "type": "guide",
@@ -154,6 +188,8 @@ async def websocket_endpoint(websocket: WebSocket):
         information_extraction_task.cancel()
         interest_extraction_task.cancel()
         checklist_extraction_task.cancel()
+        product_response_task.cancel()
+        stage_guide_task.cancel()
         
         # Wait for tasks to complete cancellation
         try:
@@ -163,6 +199,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 information_extraction_task,
                 interest_extraction_task,
                 checklist_extraction_task,
+                product_response_task,
+                stage_guide_task,
                 return_exceptions=True
                 )
         except Exception:

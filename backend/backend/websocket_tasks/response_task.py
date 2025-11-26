@@ -2,6 +2,7 @@ from backend.websocket_tasks.base import BaseWebsocketWorker, Context, WebSocket
 import json
 from backend.audio_processing.preprocessing import deduplicate_exact_match
 import asyncio
+import hashlib
 
 class TranscriptionResponseProcessor(BaseWebsocketWorker):
     def __init__(self, voice_memory):
@@ -68,32 +69,23 @@ class ProductListResponseProcessor(BaseWebsocketWorker):
 
     def _generate_filter_hash(self, customer_info):
         """Generate hash to detect if filtering criteria changed"""
-        import hashlib
         filter_data = f"{customer_info}"
         return hashlib.md5(filter_data.encode()).hexdigest()
 
     async def run_worker(self, ws: WebSocket, context: Context):
-        try:
-            while True:
-                # Only process if we have customer information
-                if context.customer_information:
-                    # Generate filter hash to detect changes
-                    current_hash = self._generate_filter_hash(context.customer_information)
-                    
-                    # Only process if filters changed
-                    if current_hash != self.last_filter_hash:
-                        print(f"[ProductList] Customer info changed: {context.customer_information}")
-                        
-                        current_product_list = self.product_filter_by_customer_info(**context.customer_information)
-                        print(f"[ProductList] Generated product list length: {len(current_product_list) if current_product_list else 0}")
-                        if current_product_list.shape[0]>0: 
-                        # Send updated product list
-                            await ws.send_text(json.dumps({
-                                "type": "product_list",
-                                "product_list": current_product_list.to_dict(orient="records"),
-                            }))                        
-                        self.last_filter_hash = current_hash
+        while True:
+            try:
+                # Wait for product updates (no sleep needed!)
+                customer_information = await context.product_queue.get()
+                products = self.product_filter_by_customer_info(**customer_information)
+                target_columns = ["product_id", "product_name", "objective", "premium_min_month_thb", "premium_max_month_thb", "age_min", "age_max", "notes"]
+                # Send to frontend
+                await ws.send_text(json.dumps({
+                    "type": "products",
+                    "products": products.loc[:, target_columns].to_dict(orient="records"),
+                }))
                 
-                await asyncio.sleep(2.0)
-        except CancelledError:
-            print("Return product list stopped.")
+            except CancelledError:
+                break
+            except Exception as e:
+                print(f"Product response error: {e}")

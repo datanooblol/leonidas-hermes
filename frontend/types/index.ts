@@ -1,8 +1,7 @@
 export interface TranscriptionResult {
-  type?: "transcription" | "summary";
+  type?: "transcription";
   timestamp: string;
   transcription?: string;
-  summary?: string;
   status: string;
   error?: string;
 }

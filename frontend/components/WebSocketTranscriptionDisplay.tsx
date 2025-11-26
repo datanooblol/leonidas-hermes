@@ -22,7 +22,6 @@ export default function WebSocketTranscriptionDisplay({
     .map((t) => t.transcription!.trim())
     .join("");
 
-  const summaries = transcriptions.filter((t) => t.type === "summary");
   const errors = transcriptions.filter((t) => t.status !== "success");
 
   return (
@@ -36,18 +35,6 @@ export default function WebSocketTranscriptionDisplay({
       >
         {successfulTranscriptions || "No transcriptions yet..."}
       </div>
-
-      {/* SUMMARY AREA */}
-      {summaries.length > 0 && (
-        <div className="bg-blue-50 p-4 rounded-lg mb-4">
-          <h3 className="font-semibold text-blue-800 mb-2">📋 Summary</h3>
-          {summaries.map((summary, index) => (
-            <div key={index} className="text-blue-700">
-              {summary.summary}
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* ERROR AREA */}
       {errors.length > 0 && (

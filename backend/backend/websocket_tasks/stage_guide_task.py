@@ -51,7 +51,7 @@ class StageGuideProcessor(BaseWebsocketWorker):
                     data = data.model_dump()
                     await ws.send_text(json.dumps(
                         dict(
-                            typd="guide",
+                            type="guide",
                             stage_name=stage,
                             guide=data
                         )
@@ -72,7 +72,7 @@ class StageGuideProcessor(BaseWebsocketWorker):
                 available_chunks = len(context.transcription_texts[index:])
                 if available_chunks >= self.length:
                     text = "".join(context.transcription_texts[index:index+self.length])
-                    await self.stage_guide_queue.put(text)
+                    await self.stage_guide_queue.put((text, context.stage))
                     index += self.offset
                     
                 await asyncio.sleep(self.sleep)

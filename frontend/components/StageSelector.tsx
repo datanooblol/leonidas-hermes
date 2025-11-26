@@ -5,9 +5,10 @@ import { useState, useEffect } from "react";
 interface StageSelectorProps {
   websocket: WebSocket | null;
   messages: any[];
+  onStageChange?: (stage: string) => void;
 }
 
-export default function StageSelector({ websocket, messages }: StageSelectorProps) {
+export default function StageSelector({ websocket, messages, onStageChange }: StageSelectorProps) {
   const [selectedStage, setSelectedStage] = useState<string>("greeting");
   const [backendMessage, setBackendMessage] = useState<string>("");
 
@@ -23,6 +24,7 @@ export default function StageSelector({ websocket, messages }: StageSelectorProp
 
   const handleStageChange = (stage: string) => {
     setSelectedStage(stage);
+    onStageChange?.(stage);
     
     if (websocket?.readyState === WebSocket.OPEN) {
       websocket.send(JSON.stringify({
