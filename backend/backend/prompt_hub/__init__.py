@@ -54,3 +54,11 @@ class PromptHub:
     @property
     def closing_agent(self):
         return Path("backend/prompt_hub/closing_agent.md").read_text(encoding='utf-8')
+    
+    @property
+    def pitch_agent_ter(self):
+        return Path("backend/prompt_hub/pitch_agent_ter.md").read_text(encoding='utf-8')
+    
+    @property
+    def transition_closing(self):
+        return Path("backend/prompt_hub/transition_closing.md").read_text(encoding='utf-8')
