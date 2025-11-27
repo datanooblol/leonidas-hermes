@@ -18,7 +18,7 @@ from backend.agents.ai_sales_coaching.extract_data_model import CustomerInfo, Cu
 import pandas as pd
 import json
 from backend.websocket_tasks.stage_guide_task import StageGuideProcessor
-
+# update
 setup_logger(logging.INFO)
 api_logger = logging.getLogger("backend.main")
 
@@ -28,7 +28,7 @@ ol2t = Overlap2Transcribe()
 voice_memory = create_memory_backend("duckdb", db_path="duckdb_session_audio.db")
 ws_session_id = None
 
-os.environ['PATH'] += r';C:\ffmpeg\ffmpeg-2025-11-17-git-e94439e49b-full_build\bin'
+# os.environ['PATH'] += r';C:\ffmpeg\ffmpeg-2025-11-17-git-e94439e49b-full_build\bin'
 
 app = FastAPI(title="Real-time Transcription API")
 
@@ -148,19 +148,33 @@ async def websocket_endpoint(websocket: WebSocket):
     stage_guide_task = asyncio.create_task(stage_guide_processor.run_worker(websocket, context))
 
     # Send initial greeting stage info using Guide model structure
+    # greeting_guide = {
+    #     "action": "Start with professional greeting and introduction",
+    #     "explanation": "Begin the call by establishing credibility and building rapport with the customer",
+    #     "signals": [
+    #         "Call just started",
+    #         "Customer answered the phone",
+    #         "No prior conversation context"
+    #     ],
+    #     "lines_to_say": [
+    #         "Hello, good morning/afternoon. My name is [Agent Name] from [Company Name].",
+    #         "I hope you're having a great day today.",
+    #         "I'm calling regarding life insurance options that might benefit you.",
+    #         "Do you have a few minutes to discuss this with me?"
+    #     ]
+    # }
     greeting_guide = {
-        "action": "Start with professional greeting and introduction",
-        "explanation": "Begin the call by establishing credibility and building rapport with the customer",
+        "action": "เริ่มการสนทนาด้วยการทักทายอย่างมืออาชีพและแนะนำตัว",
+        "explanation": "เริ่มการโทรโดยการสร้างความน่าเชื่อถือและสร้างความสัมพันธ์กับลูกค้า",
         "signals": [
-            "Call just started",
-            "Customer answered the phone",
-            "No prior conversation context"
+            "เพิ่มเริ่มต้นการโทร",
+            "ลูกค้ารับสายแล้ว",
+            "ไม่มีบริบทการสนทนาก่อนหน้า"
         ],
         "lines_to_say": [
-            "Hello, good morning/afternoon. My name is [Agent Name] from [Company Name].",
-            "I hope you're having a great day today.",
-            "I'm calling regarding life insurance options that might benefit you.",
-            "Do you have a few minutes to discuss this with me?"
+            "แนะนำตัวเองและบริษัท",
+            "อยากทราบว่าลูกค้ามีเวลาสักครู่ไหม",
+            "อธิบายวัตถุประสงค์การโทรเกี่ยวกับข้อเสนอพิเศษของบริษัท"
         ]
     }
     
