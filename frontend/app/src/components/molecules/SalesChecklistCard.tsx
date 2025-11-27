@@ -33,35 +33,35 @@ export default function SalesChecklistCard({ completedItems = [] }: SalesCheckli
   };
 
   return (
-    <div className="bg-white border-2 border-gray-800 rounded-lg p-4">
-      <div className="border-b border-gray-800 pb-2 mb-3">
-        <h3 className="font-bold text-sm">PROGRESS CHECKLIST</h3>
-        <div className="mt-2">
+    <div className="bg-white border border-gray-600 rounded p-1 h-full flex flex-col">
+      <div className="border-b border-gray-600 pb-1 mb-1 flex-shrink-0">
+        <h3 className="font-bold text-xs">PROGRESS CHECKLIST</h3>
+        <div className="mt-1">
           <div className="flex justify-between text-xs text-gray-600 mb-1">
-            <span>{completedCount}/{checklistItems.length} completed</span>
+            <span>{completedCount}/{checklistItems.length}</span>
             <span>{Math.round(progressPercentage)}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 rounded-full h-1">
             <div 
-              className="bg-green-500 h-2 rounded-full transition-all duration-300"
+              className="bg-green-500 h-1 rounded-full transition-all duration-300"
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
         </div>
       </div>
       
-      <div className="space-y-2 text-sm">
+      <div className="space-y-1 text-xs flex-1 overflow-auto">
         {checklistItems.map((item, index) => {
           const isCompleted = currentCompletedItems.includes(item);
           return (
             <div key={index} className="flex items-center gap-2">
               <button 
                 onClick={() => handleCheckboxClick(item)}
-                className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-200 cursor-pointer hover:scale-110 ${
+                className={`w-3 h-3 rounded border flex items-center justify-center transition-all duration-200 cursor-pointer hover:scale-110 ${
                   isCompleted ? 'bg-green-500 border-green-500' : 'border-gray-400 hover:border-gray-600'
                 }`}
               >
-                {isCompleted && <span className="text-white text-xs">✓</span>}
+                {isCompleted && <span className="text-white" style={{fontSize: '8px'}}>✓</span>}
               </button>
               <span className={isCompleted ? 'line-through text-gray-500' : ''}>{item}</span>
             </div>

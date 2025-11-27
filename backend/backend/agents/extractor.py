@@ -1,10 +1,11 @@
-from typing import Dict, Any, List, Type, Literal
+from typing import Dict, Any, List, Type, Literal, Optional
 from toon import decode
 import json
 from backend.llms.utils import parse_blockcode
 from pydantic import BaseModel
 import logging
 from backend.llms.utils import token_calculation, token_price_list
+from backend.websocket_tasks.base import Context
 
 class Extractor:
     def __init__(self, agent_name:str, llm:Any, system_prompt, DataModel:Type[BaseModel], format:Literal["json", "toon"]="toon", max_retries:int=2):
@@ -43,11 +44,14 @@ class Extractor:
         }
 
     def _run(self, messages):        
+        self.logger.debug(f"Running extractor with messages: {messages}")
         response = self.llm.run(self.system_prompt, messages)
         output = response.content
+        self.logger.debug(f"LLM raw output: {output}")
         self.input_tokens += response.input_tokens
         self.output_tokens += response.output_tokens
         output = parse_blockcode(output, self.format)
+        self.logger.debug(f"Parsed output: {output}")
         if self.format == "json":
             output = json.loads(output)
         elif self.format == "toon":
@@ -57,6 +61,7 @@ class Extractor:
             output = {str(k): v for k, v in output.items()}
         else:
             output = {}
+        self.logger.debug(f"Final output dict: {output}")
         output = self.DataModel(**output)
         return output
     
@@ -69,6 +74,7 @@ class Extractor:
             try:
                 result = self._run(original_messages)
                 self.logger.info(f"extraction successful on attempt {attempt + 1}")
+                # self.logger.debug(f"extraction result: {result.model_dump()}")
                 return result
             except Exception as e:
                 self.logger.warning(f"attempt {attempt + 1} failed: {e}")

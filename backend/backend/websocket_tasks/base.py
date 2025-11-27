@@ -3,17 +3,37 @@ from uuid import uuid4
 from fastapi import WebSocket
 from asyncio import Queue, CancelledError
 import time
+from typing import Optional, List, Dict, Any, Literal
+from dataclasses import dataclass, field
 
+# class Context:
+#     def __init__(self):
+#         self.session_id = str(uuid4())
+#         self.audio_queue = Queue()
+#         self.transcription_queue = Queue()
+#         self.transcription_texts:List[str] = []
+#         self.summaries:List[str] = []
+#         self.customer_information:Dict[str, Any] = {}
+#         self.customer_interest:Dict[str, Any] = {}
+#         self.agent_checklist:Dict[str, Any] = {}
+#         self.stage:str = "Greeting"
+#         self.objection:Optional[bool] = None
+#         self.information_history:List[Dict[str, Any]] = []  # Track changes over time
+@dataclass
 class Context:
-    def __init__(self):
-        self.session_id = str(uuid4())
-        self.audio_queue = Queue()
-        self.transcription_queue = Queue()
-        self.transcription_texts = []
-        self.summaries = []
-        self.customer_information = {}
-        self.customer_interest = {}
-        self.information_history = []  # Track changes over time
+    session_id: str = field(default_factory=lambda: str(uuid4()))
+    audio_queue: Queue = field(default_factory=Queue)
+    transcription_queue: Queue = field(default_factory=Queue)
+    transcription_texts: List[str] = field(default_factory=list)
+    summaries: List[str] = field(default_factory=list)
+    customer_information: Dict[str, Any] = field(default_factory=dict)
+    customer_interest: Dict[str, Any] = field(default_factory=dict)
+    agent_checklist: Dict[str, Any] = field(default_factory=dict)
+    stage_queue: Queue = field(default_factory=Queue)
+    stage:Literal["greeting", "discovery", "pitch", "closing"] = "greeting"
+    guide:Dict[str, Any] = field(default_factory=dict)
+    objection: Optional[bool] = None
+    information_history: List[Dict[str, Any]] = field(default_factory=list)
 
     def update_customer_information(self, new_info):
         """Enhanced merge with change detection and confidence scoring"""
@@ -57,19 +77,27 @@ class Context:
         else:
             # For other fields, always update with new info
             return True
-
-    def update_customer_interest(self, new_info):
-        """Track evolving customer interests"""
+            
+    def _update_data(self, new_info, current_info):
         changes_detected = False
         
         for field, value in new_info.items():
             if value is not None:
-                # Interest can change over conversation
-                if field not in self.customer_interest or self.customer_interest[field] != value:
-                    self.customer_interest[field] = value
+                if field not in current_info or current_info[field] != value:
+                    current_info[field] = value
                     changes_detected = True
         
         return changes_detected
+
+    def update_agent_checklist(self, new_info):
+        return self._update_data(new_info, self.agent_checklist)
+    
+    def update_customer_interest(self, new_info):
+        return self._update_data(new_info, self.customer_interest)
+    
+    def update_guide(self, new_info):
+        self.stage = new_info
+        return True
 
 class BaseWebsocketWorker(ABC):
     @abstractmethod

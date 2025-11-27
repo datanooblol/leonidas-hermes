@@ -21,17 +21,22 @@ export default function InterestDetectionCard({ customerInterest }: InterestDete
   ];
 
   return (
-    <div className="bg-white border-2 border-gray-800 rounded-lg p-4">
-      <div className="border-b border-gray-800 pb-2 mb-3">
-        <h3 className="font-bold text-sm">INTEREST DETECTED</h3>
+    <div className="bg-white border border-gray-600 rounded p-1 h-full flex flex-col">
+      <div className="border-b border-gray-600 pb-1 mb-1 flex-shrink-0">
+        <h3 className="font-bold text-xs">INTEREST DETECTED</h3>
+        {!customerInterest || Object.keys(customerInterest).length === 0 ? (
+          <span className="text-xs text-red-500">No data from backend</span>
+        ) : (
+          <span className="text-xs text-green-500">Data received</span>
+        )}
       </div>
       
-      <div className="grid grid-cols-2 gap-2 text-sm">
+      <div className="grid grid-cols-2 gap-1 text-xs flex-1 overflow-auto">
         {interests.map((interest, index) => (
-          <div key={index} className={`flex items-center gap-2 p-2 rounded transition-all ${
+          <div key={index} className={`flex items-center gap-1 p-1 rounded transition-all ${
             interest.detected ? 'bg-green-100 border border-green-300' : 'bg-gray-50 border border-gray-200'
           }`}>
-            <div className={`w-3 h-3 rounded-full ${
+            <div className={`w-2 h-2 rounded-full ${
               interest.detected ? 'bg-green-500' : 'bg-gray-300'
             }`} />
             <span className={interest.detected ? 'text-green-700 font-medium' : 'text-gray-500'}>

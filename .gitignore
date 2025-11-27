@@ -1,6 +1,6 @@
 # Wav file for testing
 test/
-
+backend/duckdb_session_audio.db
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

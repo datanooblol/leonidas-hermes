@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { JourneyStage } from '../../types';
 import { useWebSocket } from '../../hooks/useWebSocket';
 
@@ -9,9 +10,21 @@ interface JourneyStageCardProps {
 
 export default function JourneyStageCard({ journeyStage }: JourneyStageCardProps) {
   const { sendStageUpdate, currentStage, setCurrentStage } = useWebSocket();
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
   const stages = ['Greet', 'Discover', 'Pitch', 'Closing'];
   const displayStage = journeyStage?.stage || currentStage;
   const currentStageIndex = stages.indexOf(displayStage);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth < 640);
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   const handleStageClick = (stage: string) => {
     setCurrentStage(stage);
@@ -20,22 +33,27 @@ export default function JourneyStageCard({ journeyStage }: JourneyStageCardProps
   };
 
   return (
-    <div className="bg-white border-2 border-gray-800 rounded-lg p-4">
-      <div className="border-b border-gray-800 pb-2 mb-3">
-        <h3 className="font-bold text-sm">JOURNEY / GUIDE</h3>
+    <div className="bg-white border border-gray-600 rounded p-1 h-full flex flex-col">
+      <div className="border-b border-gray-600 pb-1 mb-1 flex-shrink-0">
+        <h3 className="font-bold text-xs">JOURNEY / GUIDE</h3>
+        {!journeyStage || Object.keys(journeyStage).length === 0 ? (
+          <span className="text-xs text-red-500">No data from backend</span>
+        ) : (
+          <span className="text-xs text-green-500">Data received</span>
+        )}
       </div>
       
-      <div className="space-y-4 text-sm">
+      <div className="space-y-2 text-xs flex-1 overflow-auto">
         <div>
           <div className="font-medium mb-3">Stage:</div>
-          <div className="relative mb-2 px-8">
-            <div className="absolute top-4 left-12 right-12 h-1 bg-gray-300"></div>
+          <div className="relative mb-2 px-4 sm:px-8">
+            <div className="absolute top-4 left-8 sm:left-12 right-8 sm:right-12 h-1 bg-gray-300"></div>
             <div className="flex justify-between">
               {stages.map((stage, index) => (
                 <div key={stage} className="flex flex-col items-center relative">
                   <button 
                     onClick={() => handleStageClick(stage)}
-                    className={`w-8 h-8 rounded-full border-2 transition-all duration-300 cursor-pointer hover:scale-110 z-10 ${
+                    className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 transition-all duration-300 cursor-pointer hover:scale-110 z-10 ${
                       index === currentStageIndex 
                         ? 'bg-yellow-500 border-yellow-500' 
                         : index < currentStageIndex 
@@ -50,8 +68,8 @@ export default function JourneyStageCard({ journeyStage }: JourneyStageCardProps
               ))}
             </div>
             <div 
-              className="absolute top-4 left-12 h-1 bg-green-500 transition-all duration-500"
-              style={{ width: `calc((100% - 96px) * ${currentStageIndex / (stages.length - 1)})` }}
+              className="absolute top-4 left-8 sm:left-12 h-1 bg-green-500 transition-all duration-500"
+              style={{ width: `calc((100% - ${isSmallScreen ? '64px' : '96px'}) * ${currentStageIndex / (stages.length - 1)})` }}
             />
           </div>
           <hr className="border-gray-300 mt-3" />

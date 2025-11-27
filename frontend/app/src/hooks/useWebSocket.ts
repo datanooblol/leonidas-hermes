@@ -34,17 +34,25 @@ export function useWebSocket() {
     
     wsRef.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      console.log('📨 Backend message received:', data);
       
       if (data.type === 'transcription' && data.transcription) {
+        console.log('🎤 Transcription:', data.transcription);
         setTranscriptions(prev => [...prev, {
           text: data.transcription,
           timestamp: data.timestamp || Date.now(),
           chunkId: data.chunkId || prev.length + 1
         }]);
       } else if (data.type === 'information' && data.customer_information) {
+        console.log('👤 Customer Info received:', data.customer_information);
         setCustomerInfo(data.customer_information);
       } else if (data.type === 'interest' && data.customer_interest) {
+        console.log('💡 Customer Interest received:', data.customer_interest);
         setCustomerInterest(data.customer_interest);
+      } else if (data.type === 'journey_stage') {
+        console.log('🗺️ Journey Stage received:', data);
+      } else {
+        console.log('❓ Unknown message type:', data.type, data);
       }
     };
   }, []);

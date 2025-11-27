@@ -10,9 +10,9 @@ export default function CustomerInfoCard({ customerInfo }: CustomerInfoCardProps
   console.log('CustomerInfo received:', customerInfo);
   
   return (
-    <div className="bg-white border-2 border-gray-800 rounded-lg p-4 text-gray-800">
-      <div className="border-b border-gray-800 pb-2 mb-3">
-        <h3 className="font-bold text-sm text-gray-800">Customer Info</h3>
+    <div className="bg-white border border-gray-600 rounded p-1 text-gray-800">
+      <div className="border-b border-gray-600 pb-1 mb-1">
+        <h3 className="font-bold text-xs text-gray-800">Customer Info</h3>
         {!customerInfo || Object.keys(customerInfo).length === 0 ? (
           <span className="text-xs text-red-500">No data from backend</span>
         ) : (
@@ -20,7 +20,7 @@ export default function CustomerInfoCard({ customerInfo }: CustomerInfoCardProps
         )}
       </div>
       
-      <div className="space-y-2 text-sm">
+      <div className="space-y-1 text-xs">
         <div className="flex items-center gap-2">
           <span>🎂</span>
           <span className="font-medium">Age:</span>
