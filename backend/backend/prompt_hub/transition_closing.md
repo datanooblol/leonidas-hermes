@@ -17,4 +17,10 @@ Return `true` ONLY if customer shows interest through trigger words:
 
 Return `false` for all other cases.
 
-**Output:** `true` or `false` only.
+Return ONLY in JSON as following schema:
+
+```json
+{
+  "interest": "true if customer shows interest based on trigger words; false otherwise."
+}
+```
