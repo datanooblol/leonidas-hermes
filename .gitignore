@@ -1,6 +1,7 @@
 # Wav file for testing
 test/
 backend/duckdb_session_audio.db
+frontend/package-lock.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

@@ -23,7 +23,7 @@ ol2t = Overlap2Transcribe()
 voice_memory = create_memory_backend("duckdb", db_path="duckdb_session_audio.db")
 ws_session_id = None
 
-os.environ['PATH'] += r';C:\ffmpeg\ffmpeg-2025-11-17-git-e94439e49b-full_build\bin'
+os.environ['PATH'] += r';C:\ffmpeg\ffmpeg-2025-11-24-git-c732564d2e-full_build\bin'
 
 app = FastAPI(title="Real-time Transcription API")
 
