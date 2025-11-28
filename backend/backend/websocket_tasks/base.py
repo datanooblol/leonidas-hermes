@@ -6,24 +6,12 @@ import time
 from typing import Optional, List, Dict, Any, Literal
 from dataclasses import dataclass, field
 
-# class Context:
-#     def __init__(self):
-#         self.session_id = str(uuid4())
-#         self.audio_queue = Queue()
-#         self.transcription_queue = Queue()
-#         self.transcription_texts:List[str] = []
-#         self.summaries:List[str] = []
-#         self.customer_information:Dict[str, Any] = {}
-#         self.customer_interest:Dict[str, Any] = {}
-#         self.agent_checklist:Dict[str, Any] = {}
-#         self.stage:str = "Greeting"
-#         self.objection:Optional[bool] = None
-#         self.information_history:List[Dict[str, Any]] = []  # Track changes over time
 @dataclass
 class Context:
     session_id: str = field(default_factory=lambda: str(uuid4()))
     audio_queue: Queue = field(default_factory=Queue)
     transcription_queue: Queue = field(default_factory=Queue)
+    product_queue: Queue = field(default_factory=Queue)
     transcription_texts: List[str] = field(default_factory=list)
     summaries: List[str] = field(default_factory=list)
     customer_information: Dict[str, Any] = field(default_factory=dict)
@@ -33,6 +21,9 @@ class Context:
     stage:Literal["greeting", "discovery", "pitch", "closing"] = "greeting"
     guide:Dict[str, Any] = field(default_factory=dict)
     objection: Optional[bool] = None
+    previous_stage: str = "greeting"
+    in_objection: bool = False
+    objection_cooldown_until: float = 0.0
     information_history: List[Dict[str, Any]] = field(default_factory=list)
 
     def update_customer_information(self, new_info):
@@ -60,7 +51,6 @@ class Context:
                         "new_value": value,
                         "timestamp": time.time()
                     })
-        
         return changes_detected
 
     def _should_update_field(self, field, old_value, new_value):
@@ -98,6 +88,23 @@ class Context:
     def update_guide(self, new_info):
         self.stage = new_info
         return True
+
+    def is_checklist_complete(self) -> bool:
+        """Check if all checklist items are True"""
+        if not self.agent_checklist:
+            return False
+        
+        # Check if all values are True (not None or False)
+        return all(value is True for value in self.agent_checklist.values())
+    
+    def is_information_complete(self) -> bool:
+        required_fields = ["age", "income_per_month", "marital_status", "number_of_children"]
+        return all(self.customer_information.get(field) is not None for field in required_fields)
+    
+    def is_interest_complete(self) -> bool:
+        required_fields = ["life_insurance", "health_insurance", "critical_illness", "accident_insurance", "retirement_planning", "tax_benefits"]
+        return all(self.customer_interest.get(field) is not None for field in required_fields)
+
 
 class BaseWebsocketWorker(ABC):
     @abstractmethod
