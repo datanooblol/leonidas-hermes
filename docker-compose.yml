@@ -1,25 +1,33 @@
 services:
-  backend-dev:
-    build: 
-      context: .
-      dockerfile: Dockerfile
+  orchestration:
+    build: ./services/orchestration
     ports:
       - "8000:8000"
+    # depends_on:
+    #   - transcription
+    #   - agent
+    # environment:
+    #   - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-ap-southeast-1}
+    #   - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+    #   - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     volumes:
-      - .:/app
-      - ~/.aws:/root/.aws:ro
-    environment:
-      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-ap-southeast-1}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}      
-    stdin_open: true
-    tty: true
-    # command: /bin/bash
-    # command: uv run --directory /app/backend main.py 
+      # - ~/.aws:/root/.aws:ro
+      - ./services/orchestration/app:/app
     command: >
       sh -c "
-      uv sync --directory /app/backend && 
-      uv run --directory /app/backend main.py
+      uv sync --directory /app && 
+      uv run --directory /app main.py
+      "    
+  transcription:
+    build: ./services/transcription
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./services/transcription/app:/app
+    command: >
+      sh -c "
+      uv sync --directory /app && 
+      uv run --directory /app main.py
       "    
     deploy:
       resources:
@@ -28,5 +36,28 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    runtime: nvidia  # For backward compatibility if needed
-    restart: unless-stopped    
+    runtime: nvidia
+
+  agent:
+    build: ./services/agent
+    ports:
+      - "8002:8000"
+    environment:
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-ap-southeast-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - ~/.aws:/root/.aws:ro
+      - ./services/agent/app:/app
+    command: >
+      sh -c "
+      uv sync --directory /app && 
+      uv run --directory /app main.py
+      "    
+
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - orchestration

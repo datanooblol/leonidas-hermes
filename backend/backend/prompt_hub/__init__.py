@@ -2,9 +2,6 @@ from pathlib import Path
 
 from backend.agents.ai_sales_coaching.utils import StageData
 
-
-
-
 class PromptHub:
     @property
     def extract_customer_information(self):
