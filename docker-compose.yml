@@ -14,7 +14,13 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}      
     stdin_open: true
     tty: true
-    command: /bin/bash
+    # command: /bin/bash
+    # command: uv run --directory /app/backend main.py 
+    command: >
+      sh -c "
+      uv sync --directory /app/backend && 
+      uv run --directory /app/backend main.py
+      "    
     deploy:
       resources:
         reservations:
