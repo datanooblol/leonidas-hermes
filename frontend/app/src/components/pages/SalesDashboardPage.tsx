@@ -1,18 +1,15 @@
 'use client';
 
+import { useWebSocket } from '../../hooks/useWebSocket';
 import { useEffect } from 'react';
 import SalesDashboard from '../organisms/SalesDashboard';
-import { useWebSocket } from '../../hooks/useWebSocket';
 
 export default function SalesDashboardPage() {
-  const { customerInfo, customerInterest, connect, isConnected } = useWebSocket();
+  const webSocketData = useWebSocket();
 
   useEffect(() => {
-    connect();
-  }, [connect]);
-  
-  console.log('WebSocket connected:', isConnected);
-  console.log('Customer info from WebSocket:', customerInfo);
+    webSocketData.connect();
+  }, [webSocketData.connect]);
 
-  return <SalesDashboard customerInfo={customerInfo} customerInterest={customerInterest} />;
+  return <SalesDashboard webSocketData={webSocketData} />;
 }

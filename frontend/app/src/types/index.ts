@@ -3,38 +3,44 @@ export interface CustomerInfo {
   income_per_month?: number;
   marital_status?: 'Single' | 'Married' | 'Divorced' | 'Widowed' | 'Separated' | 'Unknown';
   number_of_children?: number;
+  has_life_policy?: boolean;
+  has_health_policy?: boolean;
+  has_accident_policy?: boolean;
 }
 
 export interface CustomerInterest {
-  family_protection?: boolean;
-  legacy_planning?: boolean;
-  savings_goal?: boolean;
-  tax_benefits?: boolean;
-  retirement_planning?: boolean;
-  health_coverage?: boolean;
-  accident_protection?: boolean;
+  life_insurance?: boolean;
+  health_insurance?: boolean;
   critical_illness?: boolean;
-  budget_conscious?: boolean;
-  immediate_need?: boolean;
+  accident_insurance?: boolean;
+  retirement_planning?: boolean;
+  tax_benefits?: boolean;
+}
+
+export interface AgentChecklist {
+  [key: string]: boolean;
+}
+
+export interface Guide {
+  action: string;
+  explanation: string;
+  signals: string[];
+  lines_to_say: string[];
+}
+
+export interface Product {
+  product_id: string;
+  product_name: string;
+  objective: string;
+  premium_min_month_thb: number;
+  premium_max_month_thb: number;
+  age_min: number;
+  age_max: number;
+  notes: string;
 }
 
 export interface TranscriptionResult {
   text: string;
   timestamp: number;
   chunkId: number;
-}
-
-export interface JourneyStage {
-  stage: 'Greeting' | 'Discovery' | 'Pitch';
-  action: string;
-  explanation: string[];
-  signals: string[];
-  lines: string[];
-}
-
-export interface InsurancePlan {
-  name: string;
-  ageRange: string;
-  premium: string;
-  benefits: string[];
 }

@@ -8,6 +8,7 @@ interface CustomerInfoCardProps {
 
 export default function CustomerInfoCard({ customerInfo }: CustomerInfoCardProps) {
   console.log('CustomerInfo received:', customerInfo);
+  console.log('CustomerInfo keys:', Object.keys(customerInfo || {}));
   
   return (
     <div className="bg-white border border-gray-600 rounded p-1 text-gray-800">
@@ -16,7 +17,7 @@ export default function CustomerInfoCard({ customerInfo }: CustomerInfoCardProps
         {!customerInfo || Object.keys(customerInfo).length === 0 ? (
           <span className="text-xs text-red-500">No data from backend</span>
         ) : (
-          <span className="text-xs text-green-500">Data received</span>
+          <span className="text-xs text-green-500">Data: {JSON.stringify(customerInfo)}</span>
         )}
       </div>
       

@@ -12,7 +12,7 @@ from typing import Dict
 # In-memory storage for transcriptions
 transcriptions: Dict[str, str] = {}
 
-os.environ['PATH'] += r';C:\ffmpeg\ffmpeg-2025-11-17-git-e94439e49b-full_build\bin'
+os.environ['PATH'] += r';C:\ffmpeg\ffmpeg-2025-11-24-git-c732564d2e-full_build\bin'
 
 router = FastAPI(title="Real-time Transcription API")
 @router.post("/upload_chunk")

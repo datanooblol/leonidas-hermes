@@ -1,24 +1,23 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useWebSocket } from '../../hooks/useWebSocket';
-import RecordButton from '../atoms/RecordButton';
-import StatusDisplay from '../atoms/StatusDisplay';
-import TranscriptionDisplay from '../atoms/TranscriptionDisplay';
 
-export default function AudioRecorder() {
+interface AudioRecorderProps {
+  webSocketData: any;
+}
+
+export default function AudioRecorder({ webSocketData }: AudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
   
-  const { isConnected, transcriptions, connect, sendAudio, disconnect } = useWebSocket();
+  const { isConnected, transcriptions, sendAudio, disconnect } = webSocketData;
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const sessionIdRef = useRef<string>('');
   const isRecordingRef = useRef<boolean>(false);
 
-  const CHUNK_DURATION = 2000; // 2 seconds per chunk
+  const CHUNK_DURATION = 2000;
 
   useEffect(() => {
     return () => {
@@ -26,12 +25,9 @@ export default function AudioRecorder() {
     };
   }, []);
 
-
-
   const startRecording = async () => {
     try {
       console.log('Starting recording...');
-      connect();
       console.log('WebSocket connected:', isConnected);
       
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -58,19 +54,16 @@ export default function AudioRecorder() {
             const audioBlob = new Blob(chunks, { type: 'audio/webm' });
             
             try {
-              // Convert to mono WAV
               const arrayBuffer = await audioBlob.arrayBuffer();
               const audioContext = new AudioContext({ sampleRate: 16000 });
               const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
               
-              // Create mono buffer
               const monoBuffer = audioContext.createBuffer(1, audioBuffer.length, 16000);
               const monoData = monoBuffer.getChannelData(0);
               
               if (audioBuffer.numberOfChannels === 1) {
                 monoData.set(audioBuffer.getChannelData(0));
               } else {
-                // Mix stereo to mono
                 const leftChannel = audioBuffer.getChannelData(0);
                 const rightChannel = audioBuffer.getChannelData(1);
                 for (let i = 0; i < audioBuffer.length; i++) {
@@ -78,7 +71,6 @@ export default function AudioRecorder() {
                 }
               }
               
-              // Convert to WAV
               const wav = audioBufferToWav(monoBuffer);
               const monoBlob = new Blob([wav], { type: 'audio/wav' });
               console.log('Sending mono audio blob, size:', monoBlob.size);
@@ -86,18 +78,16 @@ export default function AudioRecorder() {
             } catch (error) {
               console.error('Audio conversion error:', error);
               console.log('Sending original blob as fallback, size:', audioBlob.size);
-              sendAudio(audioBlob); // Fallback
+              sendAudio(audioBlob);
             }
           }
         };
         
-        // WAV conversion helper
         const audioBufferToWav = (buffer: AudioBuffer) => {
           const length = buffer.length;
           const arrayBuffer = new ArrayBuffer(44 + length * 2);
           const view = new DataView(arrayBuffer);
           
-          // WAV header
           const writeString = (offset: number, string: string) => {
             for (let i = 0; i < string.length; i++) {
               view.setUint8(offset + i, string.charCodeAt(i));
@@ -118,7 +108,6 @@ export default function AudioRecorder() {
           writeString(36, 'data');
           view.setUint32(40, length * 2, true);
           
-          // Convert float32 to int16
           const channelData = buffer.getChannelData(0);
           let offset = 44;
           for (let i = 0; i < length; i++) {
@@ -179,7 +168,6 @@ export default function AudioRecorder() {
 
   return (
     <>
-      {/* Floating Record Button */}
       <div className="fixed bottom-4 right-4 z-50">
         <button
           onClick={isRecording ? stopRecording : startRecording}
@@ -197,14 +185,12 @@ export default function AudioRecorder() {
         </button>
       </div>
 
-      {/* Debug Info */}
       <div className="fixed top-4 left-4 z-50 bg-black text-white p-2 rounded text-xs">
         <div>Connected: {isConnected ? 'Yes' : 'No'}</div>
         <div>Recording: {isRecording ? 'Yes' : 'No'}</div>
         <div>Transcriptions: {transcriptions.length}</div>
       </div>
 
-      {/* Transcript Toggle Button */}
       {transcriptions.length > 0 && (
         <div className="fixed bottom-4 left-4 z-50">
           <button
@@ -216,7 +202,6 @@ export default function AudioRecorder() {
         </div>
       )}
 
-      {/* Transcription Modal */}
       {showTranscript && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-96 overflow-hidden">

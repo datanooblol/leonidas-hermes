@@ -8,16 +8,12 @@ interface InterestDetectionCardProps {
 
 export default function InterestDetectionCard({ customerInterest }: InterestDetectionCardProps) {
   const interests = [
-    { name: 'Family Protection', detected: customerInterest?.family_protection || false },
-    { name: 'Legacy Planning', detected: customerInterest?.legacy_planning || false },
-    { name: 'Savings Goal', detected: customerInterest?.savings_goal || false },
-    { name: 'Tax Benefits', detected: customerInterest?.tax_benefits || false },
-    { name: 'Retirement Planning', detected: customerInterest?.retirement_planning || false },
-    { name: 'Health Coverage', detected: customerInterest?.health_coverage || false },
-    { name: 'Accident Protection', detected: customerInterest?.accident_protection || false },
+    { name: 'Life Insurance', detected: customerInterest?.life_insurance || false },
+    { name: 'Health Insurance', detected: customerInterest?.health_insurance || false },
     { name: 'Critical Illness', detected: customerInterest?.critical_illness || false },
-    { name: 'Budget Conscious', detected: customerInterest?.budget_conscious || false },
-    { name: 'Immediate Need', detected: customerInterest?.immediate_need || false }
+    { name: 'Accident Insurance', detected: customerInterest?.accident_insurance || false },
+    { name: 'Retirement Planning', detected: customerInterest?.retirement_planning || false },
+    { name: 'Tax Benefits', detected: customerInterest?.tax_benefits || false }
   ];
 
   return (
