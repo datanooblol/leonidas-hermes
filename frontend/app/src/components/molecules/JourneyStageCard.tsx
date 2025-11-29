@@ -2,18 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { JourneyStage } from '../../types';
-import { useWebSocket } from '../../hooks/useWebSocket';
 
 interface JourneyStageCardProps {
   journeyStage?: JourneyStage;
+  webSocketData?: any;
 }
 
-export default function JourneyStageCard({ journeyStage }: JourneyStageCardProps) {
-  const { sendStageUpdate, currentStage, setCurrentStage } = useWebSocket();
+export default function JourneyStageCard({ journeyStage, webSocketData }: JourneyStageCardProps) {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
-  const stages = ['Greet', 'Discover', 'Pitch', 'Closing'];
-  const displayStage = journeyStage?.stage || currentStage;
-  const currentStageIndex = stages.indexOf(displayStage);
+  const stages = ['greeting', 'discovery', 'pitch', 'closing'];
+  const stageLabels = ['Greet', 'Discover', 'Pitch', 'Closing'];
+  
+  const currentStage = webSocketData?.currentStage || 'greeting';
+  const sendStageUpdate = webSocketData?.sendStageUpdate;
+  const currentStageIndex = stages.indexOf(currentStage);
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -27,9 +29,10 @@ export default function JourneyStageCard({ journeyStage }: JourneyStageCardProps
   }, []);
 
   const handleStageClick = (stage: string) => {
-    setCurrentStage(stage);
-    sendStageUpdate(stage);
-    console.log(`Stage changed to: ${stage}`);
+    if (sendStageUpdate) {
+      sendStageUpdate(stage);
+      console.log(`Stage changed to: ${stage}`);
+    }
   };
 
   return (
@@ -63,7 +66,7 @@ export default function JourneyStageCard({ journeyStage }: JourneyStageCardProps
                   />
                   <span className={`text-xs mt-1 ${
                     index === currentStageIndex ? 'font-bold text-yellow-600' : 'text-gray-600'
-                  }`}>{stage}</span>
+                  }`}>{stageLabels[index]}</span>
                 </div>
               ))}
             </div>

@@ -71,7 +71,7 @@ export default function SalesDashboard({ webSocketData }: SalesDashboardProps) {
             <div className="border border-gray-800 p-1 overflow-hidden">
               <div className="font-bold text-xs mb-1 text-center">JOURNEY / GUIDE</div>
               <div className="h-full overflow-auto">
-                <JourneyStageCard key={forceUpdate} journeyStage={journeyStage} />
+                <JourneyStageCard key={forceUpdate} journeyStage={journeyStage} webSocketData={webSocketData} />
               </div>
             </div>
             
