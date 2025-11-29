@@ -81,7 +81,7 @@ class Context:
 
     def update_agent_checklist(self, new_info):
         return self._update_data(new_info, self.agent_checklist)
-    
+
     def update_customer_interest(self, new_info):
         return self._update_data(new_info, self.customer_interest)
     
@@ -105,6 +105,17 @@ class Context:
         required_fields = ["life_insurance", "health_insurance", "critical_illness", "accident_insurance", "retirement_planning", "tax_benefits"]
         return all(self.customer_interest.get(field) is not None for field in required_fields)
 
+    def get_agent_checklist(self):
+        return self.agent_checklist
+    
+    def get_customer_interest(self):
+        return self.customer_interest
+    
+    def get_customer_information(self):
+        return self.customer_information
+
+    def get_stage(self):
+        return self.stage
 
 class BaseWebsocketWorker(ABC):
     @abstractmethod

@@ -32,7 +32,6 @@ def run_extractor(id, model_id, agent_name, system_prompt, DataModel, format, co
 
 @router.post("/customer-information-extractor", response_model=AgentResponse)
 async def information_extractor(request: ModelRequest):
-    print("input passed successfully")
     return run_extractor(
         request.id, request.model_id, "customer-information-extractor", 
         PromptHub().extract_customer_information, 
@@ -53,6 +52,32 @@ async def checklist_extractor(request: ModelRequest):
         request.id, request.model_id, "agent-checklist-extractor", 
         PromptHub().extract_agent_checklist, 
         AgentCheckList, "toon", request.content
+    )
+
+@router.post("/greeting-extractor", response_model=AgentResponse)
+async def greeting_extractor(request: ModelRequest):
+    data = {
+        "action": "เริ่มการสนทนาด้วยการทักทายอย่างมืออาชีพและแนะนำตัว",
+        "explanation": "เริ่มการโทรโดยการสร้างความน่าเชื่อถือและสร้างความสัมพันธ์กับลูกค้า",
+        "signals": [
+            "เพิ่มเริ่มต้นการโทร",
+            "ลูกค้ารับสายแล้ว",
+            "ไม่มีบริบทการสนทนาก่อนหน้า"
+        ],
+        "lines_to_say": [
+            "แนะนำตัวเองและบริษัท",
+            "อยากทราบว่าลูกค้ามีเวลาสักครู่ไหม",
+            "อธิบายวัตถุประสงค์การโทรเกี่ยวกับข้อเสนอพิเศษของบริษัท"
+        ]
+    }
+    return AgentResponse(
+        id=request.id,
+        model_id=request.model_id,
+        agent_name="greeting-extractor",
+        data=data,
+        input_tokens=0,
+        output_tokens=0,
+        response_time_ms=0,
     )
 
 @router.post("/discovery-extractor", response_model=AgentResponse)

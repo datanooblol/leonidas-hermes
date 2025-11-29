@@ -5,6 +5,8 @@ class TaskManager:
         self.tasks = []
         self.audio_queue = asyncio.Queue()
         self.message_queue = asyncio.Queue()
+        self.product_queue = asyncio.Queue()
+        self.stage_queue = asyncio.Queue()
         self.eight_message_event = asyncio.Event()
 
     def create(self, coro):

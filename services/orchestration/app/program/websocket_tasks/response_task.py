@@ -1,8 +1,6 @@
 from program.websocket_tasks.base import BaseWebsocketWorker, Context, WebSocket, CancelledError
 import json
-from program.audio_processing.preprocessing import deduplicate_exact_match
-import asyncio
-import hashlib
+from .utils import hash_value
 
 # class TranscriptionResponseProcessor(BaseWebsocketWorker):
 #     def __init__(self, voice_memory):
@@ -89,3 +87,33 @@ class ProductListResponseProcessor(BaseWebsocketWorker):
                 break
             except Exception as e:
                 print(f"Product response error: {e}")
+
+def product_filter_by_customer_info(data, age=None, income_per_month=None, afford_rate:float=0.1, **kwargs):
+    """Simple filtering using customer information only"""
+    mask = True
+    
+    if age:
+        mask &= data['age_min'] <= age
+        mask &= data['age_max'] >= age
+        
+    if income_per_month:
+        afford = income_per_month * afford_rate
+        mask &= data['premium_min_month_thb'] <= afford
+        mask &= data['premium_max_month_thb'] >= afford
+        
+    return data.loc[mask,:].head(5)
+
+async def recommend_product_task(websocket, data, product_queue):
+    proxy_hash = None
+    while True:
+        customer_information = await product_queue.get()
+        current_hash = hash_value(customer_information)
+        if proxy_hash != current_hash:
+            products = product_filter_by_customer_info(data, **customer_information)
+            target_columns = ["product_id", "product_name", "objective", "premium_min_month_thb", "premium_max_month_thb", "age_min", "age_max", "notes"]
+            # Send to frontend
+            await websocket.send_text(json.dumps({
+                "type": "products",
+                "products": products.loc[:, target_columns].to_dict(orient="records"),
+            }))
+            proxy_hash = current_hash

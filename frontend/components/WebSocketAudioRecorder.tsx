@@ -22,11 +22,11 @@ export default function WebSocketAudioRecorder({
     const ws = new WebSocket("ws://localhost:8000/ws");
     ws.onmessage = (event) => {
       const result = JSON.parse(event.data);
-      console.log("Received transcription:", result);
+      // console.log("Received transcription:", result);
       onNewTranscription(result);
     };
     websocketRef.current = ws;
-    
+
     if (onWebSocketReady) {
       onWebSocketReady(ws);
     }
