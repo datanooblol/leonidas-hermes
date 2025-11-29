@@ -17,9 +17,8 @@ export default function InterestDetectionCard({ customerInterest }: InterestDete
   ];
 
   return (
-    <div className="bg-white border border-gray-600 rounded p-1 h-full flex flex-col">
-      <div className="border-b border-gray-600 pb-1 mb-1 flex-shrink-0">
-        <h3 className="font-bold text-xs">INTEREST DETECTED</h3>
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="mb-2 flex-shrink-0">
         {!customerInterest || Object.keys(customerInterest).length === 0 ? (
           <span className="text-xs text-red-500">No data from backend</span>
         ) : (
@@ -27,15 +26,15 @@ export default function InterestDetectionCard({ customerInterest }: InterestDete
         )}
       </div>
       
-      <div className="grid grid-cols-2 gap-1 text-xs flex-1 overflow-auto">
+      <div className="grid grid-cols-2 gap-1 text-xs flex-1 overflow-y-auto">
         {interests.map((interest, index) => (
           <div key={index} className={`flex items-center gap-1 p-1 rounded transition-all ${
-            interest.detected ? 'bg-green-100 border border-green-300' : 'bg-gray-50 border border-gray-200'
+            interest.detected ? 'bg-green-100 border-l-2 border-green-500' : 'bg-gray-50 border-l-2 border-gray-300'
           }`}>
-            <div className={`w-2 h-2 rounded-full ${
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
               interest.detected ? 'bg-green-500' : 'bg-gray-300'
             }`} />
-            <span className={interest.detected ? 'text-green-700 font-medium' : 'text-gray-500'}>
+            <span className={`font-medium truncate text-xs ${interest.detected ? 'text-green-700' : 'text-gray-500'}`}>
               {interest.name}
             </span>
           </div>

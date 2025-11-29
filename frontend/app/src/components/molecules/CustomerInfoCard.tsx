@@ -11,9 +11,8 @@ export default function CustomerInfoCard({ customerInfo }: CustomerInfoCardProps
   console.log('CustomerInfo keys:', Object.keys(customerInfo || {}));
   
   return (
-    <div className="bg-white border border-gray-600 rounded p-1 text-gray-800">
-      <div className="border-b border-gray-600 pb-1 mb-1">
-        <h3 className="font-bold text-xs text-gray-800">Customer Info</h3>
+    <div className="h-full flex flex-col">
+      <div className="mb-2">
         {!customerInfo || Object.keys(customerInfo).length === 0 ? (
           <span className="text-xs text-red-500">No data from backend</span>
         ) : (
@@ -21,29 +20,29 @@ export default function CustomerInfoCard({ customerInfo }: CustomerInfoCardProps
         )}
       </div>
       
-      <div className="space-y-1 text-xs">
+      <div className="space-y-2 text-sm flex-1">
         <div className="flex items-center gap-2">
           <span>🎂</span>
           <span className="font-medium">Age:</span>
-          <span>{customerInfo?.age || 'XX'}</span>
+          <span className="font-bold text-blue-600">{customerInfo?.age || 'XX'}</span>
         </div>
         
         <div className="flex items-center gap-2">
           <span>💰</span>
           <span className="font-medium">Income:</span>
-          <span>{customerInfo?.income_per_month ? `${customerInfo.income_per_month.toLocaleString()} / month` : 'XXXX / month'}</span>
+          <span className="font-bold text-green-600">{customerInfo?.income_per_month ? `${customerInfo.income_per_month.toLocaleString()}` : 'XXXX'}</span>
         </div>
         
         <div className="flex items-center gap-2">
           <span>💍</span>
-          <span className="font-medium">Marital:</span>
-          <span>{customerInfo?.marital_status || 'Unknown'}</span>
+          <span className="font-medium">Status:</span>
+          <span className="font-bold">{customerInfo?.marital_status || 'Unknown'}</span>
         </div>
         
         <div className="flex items-center gap-2">
           <span>👶</span>
           <span className="font-medium">Children:</span>
-          <span>{customerInfo?.number_of_children ?? 0}</span>
+          <span className="font-bold">{customerInfo?.number_of_children ?? 0}</span>
         </div>
       </div>
     </div>

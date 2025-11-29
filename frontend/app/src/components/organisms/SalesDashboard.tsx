@@ -7,6 +7,7 @@ import SalesChecklistCard from '../molecules/SalesChecklistCard';
 import InterestDetectionCard from '../molecules/InterestDetectionCard';
 import ProductMatchCard from '../molecules/ProductMatchCard';
 import AudioRecorder from './AudioRecorder';
+import NavBar from './NavBar';
 
 interface SalesDashboardProps {
   webSocketData: any;
@@ -46,45 +47,69 @@ export default function SalesDashboard({ webSocketData }: SalesDashboardProps) {
   } : undefined;
 
   return (
-    <div className="h-screen bg-gray-100 p-1 text-gray-800 overflow-hidden text-xs">
-      <div className="h-full flex flex-col w-full">
-        <div className="border-2 border-gray-800 bg-white p-1 flex-1 flex flex-col">
-          <div className="text-center font-bold text-xs mb-1 border-b border-gray-800 pb-1">
-            AGENT ASSIST DASHBOARD - Update: {forceUpdate}
-          </div>
+    <div className="fixed inset-0 bg-gray-100 text-gray-800 overflow-hidden flex flex-col">
+      {/* NavBar */}
+      <NavBar />
+      
+      {/* Main Content */}
+      <div className="flex-1 p-2 pb-4 min-h-0">
+        <div className="w-full h-full flex flex-col gap-2 max-w-7xl mx-auto">
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 flex-1 overflow-hidden">
-            <div className="flex flex-col space-y-1 overflow-hidden">
-              <div className="border border-gray-800 p-1 flex-shrink-0">
-                <div className="font-bold text-xs mb-1 text-center">Customer</div>
-                <CustomerInfoCard key={forceUpdate} customerInfo={memoizedCustomerInfo} />
+          {/* TOP 70% - COMPONENT 1 + 2 */}
+          <div className="h-[70%] flex gap-2 min-h-0">
+            
+            {/* LEFT 25% - Customer Info + Interest */}
+            <div className="w-1/4 flex flex-col gap-2 min-h-0">
+              <div className="flex-1 min-h-0">
+                <div className="bg-white border border-gray-800 p-2 h-full flex flex-col rounded">
+                  <div className="font-bold text-sm mb-2 text-center border-b border-gray-800 pb-1 flex-shrink-0">
+                    CUSTOMER INFO
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-hidden">
+                    <CustomerInfoCard key={forceUpdate} customerInfo={memoizedCustomerInfo} />
+                  </div>
+                </div>
               </div>
               
-              <div className="flex-1 overflow-hidden">
-                <InterestDetectionCard key={forceUpdate} customerInterest={customerInterest} />
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <SalesChecklistCard key={forceUpdate} completedItems={Object.keys(agentChecklist).filter(key => agentChecklist[key])} />
-              </div>
-            </div>
-            
-            <div className="border border-gray-800 p-1 overflow-hidden">
-              <div className="font-bold text-xs mb-1 text-center">JOURNEY / GUIDE</div>
-              <div className="h-full overflow-auto">
-                <JourneyStageCard key={forceUpdate} journeyStage={journeyStage} webSocketData={webSocketData} />
+              <div className="flex-1 min-h-0">
+                <div className="bg-white border border-gray-800 p-2 h-full flex flex-col rounded">
+                  <div className="font-bold text-sm mb-2 text-center border-b border-gray-800 pb-1 flex-shrink-0">
+                    INTEREST
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-hidden">
+                    <InterestDetectionCard key={forceUpdate} customerInterest={customerInterest} />
+                  </div>
+                </div>
               </div>
             </div>
             
-            <div className="border border-gray-800 p-1 overflow-hidden">
-              <div className="font-bold text-xs mb-1 text-center">PRODUCT MATCH</div>
-              <div className="h-full overflow-auto">
+            {/* RIGHT 75% - Stage/Guide */}
+            <div className="w-3/4 min-h-0">
+              <div className="bg-white border border-gray-800 p-2 h-full flex flex-col rounded">
+                <div className="font-bold text-sm mb-2 text-center border-b border-gray-800 pb-1 flex-shrink-0">
+                  STAGE / GUIDE - Update: {forceUpdate}
+                </div>
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <JourneyStageCard key={forceUpdate} journeyStage={journeyStage} webSocketData={webSocketData} />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* BOTTOM 30% - Products */}
+          <div className="h-[30%] min-h-0">
+            <div className="bg-white border border-gray-800 p-2 h-full flex flex-col rounded">
+              <div className="font-bold text-sm mb-2 text-center border-b border-gray-800 pb-1 flex-shrink-0">
+                PRODUCT ZONE
+              </div>
+              <div className="flex-1 min-h-0 overflow-hidden">
                 <ProductMatchCard key={forceUpdate} products={products} />
               </div>
             </div>
           </div>
+          
+          <AudioRecorder webSocketData={webSocketData} />
         </div>
-        
-        <AudioRecorder webSocketData={webSocketData} />
       </div>
     </div>
   );

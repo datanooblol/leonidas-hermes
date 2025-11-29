@@ -78,43 +78,45 @@ export default function JourneyStageCard({ journeyStage, webSocketData }: Journe
           <hr className="border-gray-300 mt-3" />
         </div>
         
-        <div>
-          <div className="font-medium mb-2">Action: {journeyStage?.action || 'Ask Need'}</div>
-          <div className="mb-2">
-            <span className="font-medium">Explanation:</span>
-            <ul className="ml-4 mt-1 space-y-1">
-              {journeyStage?.explanation?.map((item, index) => (
-                <li key={index}>- {item}</li>
-              )) || [
-                <li key="1">- Understand pain point</li>,
-                <li key="2">- Ask clarifying questions</li>
-              ]}
-            </ul>
+        <div className="border-l-4 border-blue-400 bg-blue-50 p-2 rounded">
+          <div className="font-bold text-blue-700 mb-1">Action</div>
+          <div className="text-gray-800">{journeyStage?.action || 'Ask Need'}</div>
+        </div>
+        
+        <div className="border-l-4 border-green-400 bg-green-50 p-2 rounded">
+          <div className="font-bold text-green-700 mb-1">Explanation</div>
+          <div className="space-y-1">
+            {journeyStage?.explanation?.map((item, index) => (
+              <div key={index} className="text-gray-800">• {item}</div>
+            )) || [
+              <div key="1" className="text-gray-800">• Understand pain point</div>,
+              <div key="2" className="text-gray-800">• Ask clarifying questions</div>
+            ]}
           </div>
         </div>
         
-        <div>
-          <div className="font-medium mb-2">Signals:</div>
-          <ul className="ml-4 space-y-1">
+        <div className="border-l-4 border-orange-400 bg-orange-50 p-2 rounded">
+          <div className="font-bold text-orange-700 mb-1">Signals</div>
+          <div className="space-y-1">
             {journeyStage?.signals?.map((signal, index) => (
-              <li key={index}>- {signal}</li>
+              <div key={index} className="text-gray-800">• {signal}</div>
             )) || [
-              <li key="1">- hesitation</li>,
-              <li key="2">- curiosity</li>
+              <div key="1" className="text-gray-800">• hesitation</div>,
+              <div key="2" className="text-gray-800">• curiosity</div>
             ]}
-          </ul>
+          </div>
         </div>
         
-        <div>
-          <div className="font-medium mb-2">Lines to say:</div>
-          <ul className="ml-4 space-y-1">
+        <div className="border-l-4 border-purple-400 bg-purple-50 p-2 rounded">
+          <div className="font-bold text-purple-700 mb-1">Lines to say</div>
+          <div className="space-y-1">
             {journeyStage?.lines?.map((line, index) => (
-              <li key={index}>• "{line}"</li>
+              <div key={index} className="text-gray-800 italic">"{line}"</div>
             )) || [
-              <li key="1">• "ขอทราบความต้องการเพิ่มเติม…"</li>,
-              <li key="2">• "ตอนนี้ลูกค้ามีประกันตัวไหนอยู่?"</li>
+              <div key="1" className="text-gray-800 italic">"ขอทราบความต้องการเพิ่มเติม…"</div>,
+              <div key="2" className="text-gray-800 italic">"ตอนนี้ลูกค้ามีประกันตัวไหนอยู่?"</div>
             ]}
-          </ul>
+          </div>
         </div>
       </div>
     </div>
