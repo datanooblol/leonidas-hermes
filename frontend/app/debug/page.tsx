@@ -66,9 +66,11 @@ export default function WebSocketPage() {
 
   const handleObjectionResolved = () => {
     if (websocket?.readyState === WebSocket.OPEN) {
-      websocket.send(JSON.stringify({
-        type: "objection_resolved"
-      }));
+      websocket.send(
+        JSON.stringify({
+          type: "objection_resolved",
+        })
+      );
     }
   };
 
@@ -109,7 +111,7 @@ export default function WebSocketPage() {
                 websocket={websocket}
               />
             </div>
-            
+
             {/* Right Top - Stage Guide Panel */}
             <div className="flex-1">
               <StageGuidePanel
@@ -123,12 +125,10 @@ export default function WebSocketPage() {
               />
             </div>
           </div>
-          
+
           {/* Bottom - Product Cards */}
           <div className="h-1/2">
-            <ProductCard
-              products={latestProducts?.products || null}
-            />
+            <ProductCard products={latestProducts?.products || null} />
           </div>
         </div>
       </div>

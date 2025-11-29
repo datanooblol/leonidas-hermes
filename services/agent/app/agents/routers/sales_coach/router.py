@@ -32,6 +32,7 @@ def run_extractor(id, model_id, agent_name, system_prompt, DataModel, format, co
 
 @router.post("/customer-information-extractor", response_model=AgentResponse)
 async def information_extractor(request: ModelRequest):
+    print("input passed successfully")
     return run_extractor(
         request.id, request.model_id, "customer-information-extractor", 
         PromptHub().extract_customer_information, 

@@ -21,7 +21,7 @@ services:
   transcription:
     build: ./services/transcription
     ports:
-      - "8001:8000"
+      - "8001:8001"
     volumes:
       - ./services/transcription/app:/app
     command: >
@@ -41,7 +41,7 @@ services:
   agent:
     build: ./services/agent
     ports:
-      - "8002:8000"
+      - "8002:8002"
     environment:
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-ap-southeast-1}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}

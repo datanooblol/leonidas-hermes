@@ -17,18 +17,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/transcribe")
+@app.post("/transcribe", response_model=ASRResponse)
 async def transcribe(
     file: UploadFile = File(...),
-    chunk_id: int = Form(...),
-    task_id: str = Form(default_factory=lambda: str(uuid4())),
+    chunk_id: str = Form(...),
+    # task_id: str = Form(default_factory=lambda: str(uuid4())),
     normalize: bool = Form(False),
     with_timestamps: bool = Form(False),
     # format: str = Form("wav")
 ):
     audio_bytes = await file.read()
+    task_id = str(uuid4())
     # Placeholder for transcription logic
-    transcription = "Transcribed text from audio."
+    # transcription = "Transcribed text from audio."
     tengine = TranscriptionEngine(asr_model)
     transcription = tengine.run(
         audio_chunks=[audio_bytes], 
@@ -49,4 +50,4 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)

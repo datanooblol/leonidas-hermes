@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from uuid import uuid4
 
 class AgentResponse(BaseModel):
@@ -9,4 +9,4 @@ class AgentResponse(BaseModel):
     input_tokens: int = Field(default=0)
     output_tokens: int = Field(default=0)
     response_time_ms: int = Field(default=0)
-    id: str = Field(default_factory=lambda: str(uuid4()))
+    id: Optional[str] = Field(default_factory=lambda: str(uuid4()))
