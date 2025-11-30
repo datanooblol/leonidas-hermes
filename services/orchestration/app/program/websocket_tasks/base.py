@@ -1,26 +1,19 @@
 from abc import ABC, abstractmethod
 from uuid import uuid4
 from fastapi import WebSocket
-from asyncio import Queue, CancelledError
+from asyncio import CancelledError
 import time
-from typing import Optional, List, Dict, Any, Literal
+from typing import List, Dict, Any, Literal
 from dataclasses import dataclass, field
 
 @dataclass
 class Context:
     session_id: str = field(default_factory=lambda: str(uuid4()))
-    # audio_queue: Queue = field(default_factory=Queue)
-    # transcription_queue: Queue = field(default_factory=Queue)
-    # product_queue: Queue = field(default_factory=Queue)
     transcription_texts: List[str] = field(default_factory=list)
-    # summaries: List[str] = field(default_factory=list)
     customer_information: Dict[str, Any] = field(default_factory=dict)
     customer_interest: Dict[str, Any] = field(default_factory=dict)
     agent_checklist: Dict[str, Any] = field(default_factory=dict)
-    # stage_queue: Queue = field(default_factory=Queue)
     stage:Literal["greeting", "discovery", "pitch", "closing"] = "greeting"
-    # guide:Dict[str, Any] = field(default_factory=dict)
-    # objection: Optional[bool] = None
     previous_stage: str = "greeting"
     in_objection: bool = False
     objection_cooldown_until: float = 0.0
@@ -92,11 +85,13 @@ class Context:
 
     def is_checklist_complete(self) -> bool:
         """Check if all checklist items are True"""
-        if not self.agent_checklist:
-            return False
+        # if not self.agent_checklist:
+        #     return False
         
         # Check if all values are True (not None or False)
-        return all(value is True for value in self.agent_checklist.values())
+        required_fields = ["agent_introduced", "company_mentioned", "permission_asked"]
+        # return all(value is True for value in self.agent_checklist.values())
+        return all(self.agent_checklist.get(field) for field in required_fields)
     
     def is_information_complete(self) -> bool:
         required_fields = ["age", "income_per_month", "marital_status", "number_of_children"]

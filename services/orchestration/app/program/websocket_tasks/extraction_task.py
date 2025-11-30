@@ -23,7 +23,9 @@ class ExtractionTask:
         try:
             agent_name = "customer-information-extractor"
             response = await call_agent(agent_name=agent_name, id=id, model_id=self.model_id, content=content)
-            is_update = self.context.update_customer_information(response.get("data", {}))
+            data = response.get("data", {})
+            self.logger.debug(f"Extracted information: {data}")
+            is_update = self.context.update_customer_information(data)
             if is_update:
                 response_data = self.context.get_customer_information()
                 response_msg = pack_message(agent_name, response_data)
@@ -36,7 +38,9 @@ class ExtractionTask:
         try:
             agent_name = "customer-interest-extractor"
             response = await call_agent(agent_name=agent_name, id=id, model_id=self.model_id, content=content)
-            is_update = self.context.update_customer_interest(response.get("data", {}))
+            data = response.get("data", {})
+            self.logger.debug(f"Extracted interest: {data}")
+            is_update = self.context.update_customer_interest(data)
             if is_update:
                 response_data = self.context.get_customer_interest()
                 response_msg = pack_message(agent_name, response_data)
@@ -49,7 +53,9 @@ class ExtractionTask:
         try:
             agent_name = "agent-checklist-extractor"
             response = await call_agent(agent_name=agent_name, id=id, model_id=self.model_id, content=content)
-            is_update = self.context.update_agent_checklist(response.get("data", {}))
+            data = response.get("data", {})
+            self.logger.debug(f"Extracted checklist: {data}")
+            is_update = self.context.update_agent_checklist(data)
             if is_update:
                 response_data = self.context.get_agent_checklist()
                 response_msg = pack_message(agent_name, response_data)
@@ -69,6 +75,7 @@ class ExtractionTask:
     async def check_stage_transition(self):
         old_stage = self.context.stage
         if self.context.stage=="greeting" and self.context.is_checklist_complete():
+            self.logger.debug(f"Current Checklist: {self.context.get_agent_checklist()}")
             self.logger.info("Checklist complete, moving to discovery stage.")
             self.context.stage = "discovery"
         if old_stage != self.context.stage:

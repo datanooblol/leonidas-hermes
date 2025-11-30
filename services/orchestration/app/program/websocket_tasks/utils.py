@@ -30,6 +30,6 @@ def pack_message(agent_name, data, stage_name:Optional[str]=None):
         return dict(type="interest", customer_interest=data)
     if agent_name=="agent-checklist-extractor":
         return dict(type="checklist", agent_checklist=data)
-    if agent_name in ["greeting-extractor", "discovery-extractor", "pitch-extractor", "closing-extractor", "objection-extractor"]:
+    if agent_name in ["greeting-extractor", "discovery-extractor", "pitch-extractor", "closing-extractor"]:
         return dict(type="guide", stage_name=stage_name, guide=data)
     return {}

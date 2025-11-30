@@ -28,12 +28,19 @@ class ProductTask:
             afford = income_per_month * afford_rate
             mask &= data['premium_max_month_thb'] <= afford
             
-        return data.loc[mask,:].head(5)
+        return data.loc[mask,:]
 
     async def process_products(self, data):
         while True:
             await self.task_manager.product_event.wait()
-            filtered_products = self.product_filter_by_params(data, 0.2, **self.context.get_product_filters())
+            
+            filters = self.context.get_product_filters()
+            self.logger.debug(f"Product filtering triggered with filters: {filters}")
+            
+            filtered_products = self.product_filter_by_params(data, 0.2, **filters)
+            
+            self.logger.info(f"Found {filtered_products.shape[0]} products matching criteria")
+            
             target_columns = ["product_id", "product_name", "objective", "premium_min_month_thb", "premium_max_month_thb", "age_min", "age_max", "notes"]
             await self.websocket.send_text(json.dumps({
                 "type": "products",

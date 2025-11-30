@@ -1,5 +1,3 @@
-from .utils import call_agent, pack_message
-import asyncio
 from .base import Context
 import json
 from .task_manager import TaskManager
@@ -21,6 +19,7 @@ class CommandTask:
     async def update_information_manually(self, data):
         if data:
             self.context.customer_information.update(data)
+            self.logger.debug(f"Customer information updated: {data}")
             await self.websocket.send_text(json.dumps({
                 "type": "information",
                 "customer_information": self.context.get_customer_information()
@@ -30,6 +29,7 @@ class CommandTask:
     async def update_interest_manually(self, data):
         if data:
             self.context.customer_interest.update(data)
+            self.logger.debug(f"Customer interest updated: {data}")
             await self.websocket.send_text(json.dumps({
                 "type": "interest",
                 "customer_interest": self.context.get_customer_interest()
@@ -39,7 +39,11 @@ class CommandTask:
     async def update_stage_manually(self, data):
         if data:
             stage_name = data.get("stage_name")
-            self.context.stage = stage_name
+            old_stage = self.context.stage
+            self.context.stage = stage_name  # ← This updates the context
+            
+            self.logger.info(f"Stage manually changed from {old_stage} to {stage_name}")
+            
             await self.websocket.send_text(json.dumps({
                 "type": "guide",
                 "stage_name": stage_name,

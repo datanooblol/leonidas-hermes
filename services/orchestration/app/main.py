@@ -1,16 +1,11 @@
-from fastapi import FastAPI, UploadFile, File, Form, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-import asyncio
 from program.memory import create_memory_backend
 from program.websocket_tasks.base import Context
 import logging
 import pandas as pd
 import json
 from program.websocket_tasks.task_manager import TaskManager
-# from program.websocket_tasks.calling_agent_task import call_extractor_agent_task, call_agent, call_stage_agent_task
-# from program.websocket_tasks.transcription_task import create_transcription_task
-# from program.websocket_tasks.response_task import recommend_product_task
-
 from program.websocket_tasks.utils import call_agent
 from program.websocket_tasks.transcription_task import TranscriptionTask
 from program.websocket_tasks.extraction_task import ExtractionTask
@@ -67,13 +62,6 @@ async def ws(websocket: WebSocket):
     manager.create(product_task.process_products(products_df))
     manager.create(command_task.process_command())
 
-    # manager.create(create_transcription_task(websocket, ws_session_id, memory, manager.audio_queue, manager.message_queue, manager.stage_queue))
-    # manager.create(call_extractor_agent_task(websocket, "customer-information-extractor", "us.amazon.nova-micro-v1:0", manager.message_queue, context.update_customer_information, context.get_customer_information, context.is_information_complete))
-    # manager.create(call_extractor_agent_task(websocket, "customer-interest-extractor", "us.amazon.nova-micro-v1:0", manager.message_queue, context.update_customer_interest, context.get_customer_interest, context.is_interest_complete))
-    # manager.create(call_extractor_agent_task(websocket, "agent-checklist-extractor", "us.amazon.nova-micro-v1:0", manager.message_queue, context.update_agent_checklist, context.get_agent_checklist, context.is_checklist_complete))
-    # manager.create(call_stage_agent_task(websocket, "us.amazon.nova-micro-v1:0", context.get_stage, manager.stage_queue))
-    # manager.create(recommend_product_task(websocket, products_df, manager.product_queue))
-
     greeting_guide = await call_agent(agent_name="greeting-extractor", id="", model_id="", content="")
     greeting_guide = greeting_guide["data"]
     
@@ -95,34 +83,6 @@ async def ws(websocket: WebSocket):
                     await manager.audio_queue.put((ws_session_id, data))
                 elif "text" in message:
                     await manager.command_queue.put(json.loads(message["text"]))
-                    # try:
-                    #     stage_data = json.loads(message["text"])
-                    #     if stage_data.get("type")=="guide":
-                    #         stage_name = stage_data.get("stage_name")
-                    #         context.stage = stage_name
-
-                    #         await websocket.send_text(json.dumps({
-                    #             "type": "guide",
-                    #             "stage_name": stage_name,
-                    #             "message": f"Stage set to {stage_name}"
-                    #         }))
-                    #     elif stage_data.get("type")=="manual_information_update":
-                    #         update_data = stage_data.get("data", {})
-                    #         context.customer_information.update(update_data)
-                    #         await websocket.send_text(json.dumps({
-                    #             "type": "information",
-                    #             "customer_information": context.customer_information
-                    #         }))
-                    #         await manager.product_queue.put(context.customer_information)
-                    #     elif stage_data.get("type")=="manual_interest_update":
-                    #         update_data = stage_data.get("data", {})
-                    #         context.customer_interest.update(update_data)
-                    #         await websocket.send_text(json.dumps({
-                    #             "type": "interest",
-                    #             "customer_interest": context.customer_interest
-                    #         }))
-                    # except:
-                    #     pass
     except WebSocketDisconnect:
         print("WebSocket disconnected")
     finally:

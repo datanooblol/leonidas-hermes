@@ -50,7 +50,8 @@ export default function StageGuidePanel({
     if (websocket?.readyState === WebSocket.OPEN) {
       const message = {
         type: "guide",
-        stage_name: stage,
+        data: { stage_name: stage },
+        // stage_name: stage,
       };
 
       // console.log("Sending to backend:", message);

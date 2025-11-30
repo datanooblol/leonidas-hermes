@@ -3,15 +3,7 @@ services:
     build: ./services/orchestration
     ports:
       - "8000:8000"
-    # depends_on:
-    #   - transcription
-    #   - agent
-    # environment:
-    #   - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-ap-southeast-1}
-    #   - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-    #   - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     volumes:
-      # - ~/.aws:/root/.aws:ro
       - ./services/orchestration/app:/app
     command: >
       sh -c "
@@ -54,10 +46,3 @@ services:
       uv sync --directory /app && 
       uv run --directory /app main.py
       "    
-
-  # frontend:
-  #   build: ./frontend
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - orchestration

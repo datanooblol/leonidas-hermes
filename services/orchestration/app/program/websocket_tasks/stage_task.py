@@ -46,8 +46,9 @@ class StageTask:
         try:
             agent_name = f"{stage_name}-extractor"
             response = await call_agent(agent_name=agent_name, id=id, model_id=self.model_id, content=content)
-            response_data = response.get("data", {})
-            response_msg = pack_message(agent_name, response_data, stage_name)
+            data = response.get("data", {})
+            self.logger.debug(f"{stage_name} extracted guide: {data}")
+            response_msg = pack_message(agent_name, data, stage_name)
             await self.websocket.send_text(json.dumps(response_msg))
         except Exception as e:
             self.logger.error(f"{stage_name} failed: {e}")
@@ -56,6 +57,9 @@ class StageTask:
         while True:
             try:
                 id, content = await self.task_manager.message_queue.get()
+                if self.context.in_objection:
+                    self.logger.debug(f"Skipping guide_stage - currently in objection mode")
+                    continue
                 asyncio.create_task(self.guide_stage(id, content))
             except Exception as e:
                 self.logger.error(f"Message Processing failed: {e}")
@@ -66,6 +70,7 @@ class StageTask:
             agent_name = f"{stage_name}-extractor"
             response = await call_agent(agent_name=agent_name, id=id, model_id=self.model_id, content=content)
             data = response.get("data", {})
+            self.logger.debug(f"{stage_name} extracted guide: {data}")
             await self.check_objection(data)
             # if response_data:
         except Exception as e:
@@ -74,7 +79,7 @@ class StageTask:
     async def check_objection(self, data):
         # Fix: data might be dict, not object
         if all([data.get("action"), data.get("explanation"), data.get("signals"), data.get("lines_to_say")]):
-            if not self.context.in_objection:
+            if self.context.in_objection is False:
                 self.context.previous_stage = self.context.get_stage()
                 self.context.in_objection = True
             await self.websocket.send_text(json.dumps({
@@ -88,7 +93,7 @@ class StageTask:
             try:
                 id, content = await self.task_manager.message_queue.get()
                 # Only check for objections if not in cooldown AND not already in objection
-                if (time.time() >= self.context.objection_cooldown_until) and (not self.context.in_objection):
+                if (time.time() >= self.context.objection_cooldown_until) and (self.context.in_objection is False):
                     asyncio.create_task(self.guide_objection(id, content))
             except Exception as e:
                 self.logger.error(f"Objection Processing failed: {e}")
