@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import WebSocketAudioRecorder from "../../components/WebSocketAudioRecorder";
-import WebSocketTranscriptionDisplay from "../../components/WebSocketTranscriptionDisplay";
+// import WebSocketTranscriptionDisplay from "../../components/WebSocketTranscriptionDisplay";
 import CustomerInfoPanel from "../../components/CustomerInfoPanel";
 import ProductCard from "../../components/ProductCard";
-import StageSelector from "../../components/StageSelector";
+// import StageSelector from "../../components/StageSelector";
 import TranscriptionFloatingIcon from "../../components/TranscriptionFloatingIcon";
 import StageGuidePanel from "../../components/StageGuidePanel";
 
@@ -18,7 +18,8 @@ interface WebSocketMessage {
     | "guide"
     | "products"
     | "stage_change"
-    | "objection";
+    | "objection"
+    | "objection_resolved";
   timestamp?: string;
   transcription?: string;
   customer_information?: any;
@@ -40,6 +41,19 @@ export default function WebSocketPage() {
   const [inObjection, setInObjection] = useState<boolean>(false);
   const [objectionData, setObjectionData] = useState<any>(null);
 
+  // const handleNewMessage = (message: WebSocketMessage) => {
+  //   if (message.type === "stage_change") {
+  //     setSelectedStage(message.stage!);
+  //     if (message.reason === "objection_resolved") {
+  //       setInObjection(false);
+  //       setObjectionData(null);
+  //     }
+  //   } else if (message.type === "objection") {
+  //     setInObjection(true);
+  //     setObjectionData(message);
+  //   }
+  //   setMessages((prev) => [...prev, message]);
+  // };
   const handleNewMessage = (message: WebSocketMessage) => {
     if (message.type === "stage_change") {
       setSelectedStage(message.stage!);
@@ -50,6 +64,10 @@ export default function WebSocketPage() {
     } else if (message.type === "objection") {
       setInObjection(true);
       setObjectionData(message);
+    } else if (message.type === "objection_resolved") {
+      // ← Add these 3 lines
+      setInObjection(false);
+      setObjectionData(null);
     }
     setMessages((prev) => [...prev, message]);
   };
@@ -66,11 +84,12 @@ export default function WebSocketPage() {
 
   const handleObjectionResolved = () => {
     if (websocket?.readyState === WebSocket.OPEN) {
-      websocket.send(
-        JSON.stringify({
-          type: "objection_resolved",
-        })
-      );
+      // const message = { type: "objection_resolved" }
+      const message = {
+        type: "manual_resolve_objection",
+        data: { resolved: true },
+      };
+      websocket.send(JSON.stringify(message));
     }
   };
 

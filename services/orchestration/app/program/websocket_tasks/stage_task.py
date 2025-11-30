@@ -4,6 +4,7 @@ from .base import Context
 import json
 from .task_manager import TaskManager
 import logging
+import time
 
 class StageTask:
     def __init__(
@@ -25,13 +26,69 @@ class StageTask:
             discovery="checklist_complete"
         )
 
-        self.websocket.send_text(json.dumps({
+        await self.websocket.send_text(json.dumps({
             "type": "stage_change",
             "stage": stage,
             "reason": reasons[stage]
         }))
 
-    async def stage_transition(self):
+    async def process_transition(self):
         while True:
-            await self.task_manager.transition_event.wait()
-            await self.send_new_stage()
+            try:
+                await self.task_manager.transition_event.wait()
+                await self.send_new_stage()
+                self.task_manager.transition_event.clear()
+            except Exception as e:
+                self.logger.error(f"Transition failed: {e}")
+
+    async def guide_stage(self, id, content):
+        stage_name = self.context.get_stage()
+        try:
+            agent_name = f"{stage_name}-extractor"
+            response = await call_agent(agent_name=agent_name, id=id, model_id=self.model_id, content=content)
+            response_data = response.get("data", {})
+            response_msg = pack_message(agent_name, response_data, stage_name)
+            await self.websocket.send_text(json.dumps(response_msg))
+        except Exception as e:
+            self.logger.error(f"{stage_name} failed: {e}")
+
+    async def process_stage(self):
+        while True:
+            try:
+                id, content = await self.task_manager.message_queue.get()
+                asyncio.create_task(self.guide_stage(id, content))
+            except Exception as e:
+                self.logger.error(f"Message Processing failed: {e}")
+    
+    async def guide_objection(self, id, content):
+        stage_name = "objection"
+        try:
+            agent_name = f"{stage_name}-extractor"
+            response = await call_agent(agent_name=agent_name, id=id, model_id=self.model_id, content=content)
+            data = response.get("data", {})
+            await self.check_objection(data)
+            # if response_data:
+        except Exception as e:
+            self.logger.error(f"{stage_name} failed: {e}")
+
+    async def check_objection(self, data):
+        # Fix: data might be dict, not object
+        if all([data.get("action"), data.get("explanation"), data.get("signals"), data.get("lines_to_say")]):
+            if not self.context.in_objection:
+                self.context.previous_stage = self.context.get_stage()
+                self.context.in_objection = True
+            await self.websocket.send_text(json.dumps({
+                "type": "objection",
+                "guide": data,
+                "previous_stage": self.context.previous_stage
+            }))
+    
+    async def process_objection(self):
+        while True:
+            try:
+                id, content = await self.task_manager.message_queue.get()
+                # Only check for objections if not in cooldown AND not already in objection
+                if (time.time() >= self.context.objection_cooldown_until) and (not self.context.in_objection):
+                    asyncio.create_task(self.guide_objection(id, content))
+            except Exception as e:
+                self.logger.error(f"Objection Processing failed: {e}")

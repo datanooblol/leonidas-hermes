@@ -42,7 +42,6 @@ class ExtractionTask:
                 response_msg = pack_message(agent_name, response_data)
                 await self.websocket.send_text(json.dumps(response_msg))
                 await self.check_product_update()
-
         except Exception as e:
             self.logger.error(f"Interest Extraction failed: {e}")
     

@@ -9,18 +9,18 @@ from dataclasses import dataclass, field
 @dataclass
 class Context:
     session_id: str = field(default_factory=lambda: str(uuid4()))
-    audio_queue: Queue = field(default_factory=Queue)
-    transcription_queue: Queue = field(default_factory=Queue)
-    product_queue: Queue = field(default_factory=Queue)
+    # audio_queue: Queue = field(default_factory=Queue)
+    # transcription_queue: Queue = field(default_factory=Queue)
+    # product_queue: Queue = field(default_factory=Queue)
     transcription_texts: List[str] = field(default_factory=list)
-    summaries: List[str] = field(default_factory=list)
+    # summaries: List[str] = field(default_factory=list)
     customer_information: Dict[str, Any] = field(default_factory=dict)
     customer_interest: Dict[str, Any] = field(default_factory=dict)
     agent_checklist: Dict[str, Any] = field(default_factory=dict)
-    stage_queue: Queue = field(default_factory=Queue)
+    # stage_queue: Queue = field(default_factory=Queue)
     stage:Literal["greeting", "discovery", "pitch", "closing"] = "greeting"
-    guide:Dict[str, Any] = field(default_factory=dict)
-    objection: Optional[bool] = None
+    # guide:Dict[str, Any] = field(default_factory=dict)
+    # objection: Optional[bool] = None
     previous_stage: str = "greeting"
     in_objection: bool = False
     objection_cooldown_until: float = 0.0

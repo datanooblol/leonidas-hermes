@@ -26,8 +26,6 @@ class ProductTask:
             
         if income_per_month:
             afford = income_per_month * afford_rate
-            # mask &= data['premium_min_month_thb'] <= afford
-            # mask &= data['premium_max_month_thb'] >= afford
             mask &= data['premium_max_month_thb'] <= afford
             
         return data.loc[mask,:].head(5)
@@ -41,3 +39,4 @@ class ProductTask:
                 "type": "products",
                 "products": filtered_products.loc[:, target_columns].to_dict(orient="records"),
             }))
+            self.task_manager.product_event.clear()
