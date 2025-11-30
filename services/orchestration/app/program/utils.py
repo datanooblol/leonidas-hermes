@@ -46,7 +46,8 @@ def setup_logger(level=logging.DEBUG):
     logging.getLogger('boto3').setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
-    logging.getLogger("pydub.converter").setLevel(logging.WARNING)    
+    logging.getLogger("pydub.converter").setLevel(logging.WARNING)
+    logging.getLogger('asyncio').setLevel(logging.WARNING)
     
     print("✅ Development logging enabled (DEBUG level) - Console")
 

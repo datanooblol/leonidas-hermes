@@ -12,9 +12,14 @@ from program.websocket_tasks.transcription_task import create_transcription_task
 from program.websocket_tasks.response_task import recommend_product_task
 from program.utils import setup_logger
 import logging
+
 setup_logger(logging.DEBUG)
 
 app = FastAPI(title="Orchestration Service")
+
+# work via context: Context
+# work via queue: audio_queue, product_queue
+# components: stage/funnel/flow, extraction/product, transcription/control message
 
 # Enable CORS for Next.js frontend
 app.add_middleware(

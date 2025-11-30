@@ -20,12 +20,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# @app.post("/one-short-agent", response_model=ModelResponse)
-# async def agent_greeting(request:ModelRequest):
-#     llm = BedrockNova()
-#     response = llm.run(system_prompt="You are the best bro in the world. Answer it in short and laid-back manner.", messages=[dict(role="user", content=request.content)])
-#     return response
-
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""

@@ -25,6 +25,7 @@ class Context:
     in_objection: bool = False
     objection_cooldown_until: float = 0.0
     information_history: List[Dict[str, Any]] = field(default_factory=list)
+    last_product_filters:dict = field(default_factory=dict)
 
     def update_customer_information(self, new_info):
         """Enhanced merge with change detection and confidence scoring"""
@@ -116,6 +117,9 @@ class Context:
 
     def get_stage(self):
         return self.stage
+    
+    def get_product_filters(self):
+        return self.customer_information
 
 class BaseWebsocketWorker(ABC):
     @abstractmethod
