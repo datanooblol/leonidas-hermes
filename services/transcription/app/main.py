@@ -17,6 +17,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# we should have more method for transciption like: google services or whisper variants
 @app.post("/transcribe", response_model=ASRResponse)
 async def transcribe(
     file: UploadFile = File(...),

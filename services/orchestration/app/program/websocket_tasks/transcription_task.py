@@ -115,6 +115,7 @@ class TranscriptionTask:
             await self.task_manager.message_queue.put((str(uuid4()), messages_to_send))
         
         # Handle stage_queue (8 messages)  
+        # offset=4 is ok but we should try 3 or 5 later
         stage_messages_to_send = await self.should_trigger_queue(self.transcription_messages, window_size=8, offset=4, start_at=8)
         if stage_messages_to_send:
             self.logger.debug(f"Triggering stage queue: {stage_messages_to_send}")

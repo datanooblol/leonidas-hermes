@@ -57,9 +57,11 @@ class StageTask:
         while True:
             try:
                 id, content = await self.task_manager.message_queue.get()
-                if self.context.in_objection:
-                    self.logger.debug(f"Skipping guide_stage - currently in objection mode")
-                    continue
+                # Initial idea is if in objection, we'll not run the stage detection, but it seems if we resolve the objection
+                # we can't get the information back and have to wait for the next round which not good in terms of waiting time
+                # if self.context.in_objection:
+                #     self.logger.debug(f"Skipping guide_stage - currently in objection mode")
+                #     continue
                 asyncio.create_task(self.guide_stage(id, content))
             except Exception as e:
                 self.logger.error(f"Message Processing failed: {e}")
