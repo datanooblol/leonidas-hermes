@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { TranscriptionResult } from '../../types';
 
 interface AudioRecorderProps {
   webSocketData: any;
@@ -9,9 +10,9 @@ interface AudioRecorderProps {
 export default function AudioRecorder({ webSocketData }: AudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
-  
+
   const { isConnected, transcriptions, sendAudio, disconnect } = webSocketData;
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -29,8 +30,8 @@ export default function AudioRecorder({ webSocketData }: AudioRecorderProps) {
     try {
       console.log('Starting recording...');
       console.log('WebSocket connected:', isConnected);
-      
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           channelCount: 1,
           sampleRate: 16000,
@@ -39,7 +40,7 @@ export default function AudioRecorder({ webSocketData }: AudioRecorderProps) {
         }
       });
       streamRef.current = stream;
-      
+
       const startChunkRecording = () => {
         const mediaRecorder = new MediaRecorder(stream);
         mediaRecorderRef.current = mediaRecorder;
@@ -52,15 +53,15 @@ export default function AudioRecorder({ webSocketData }: AudioRecorderProps) {
         mediaRecorder.onstop = async () => {
           if (chunks.length > 0) {
             const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-            
+
             try {
               const arrayBuffer = await audioBlob.arrayBuffer();
               const audioContext = new AudioContext({ sampleRate: 16000 });
               const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-              
+
               const monoBuffer = audioContext.createBuffer(1, audioBuffer.length, 16000);
               const monoData = monoBuffer.getChannelData(0);
-              
+
               if (audioBuffer.numberOfChannels === 1) {
                 monoData.set(audioBuffer.getChannelData(0));
               } else {
@@ -70,7 +71,7 @@ export default function AudioRecorder({ webSocketData }: AudioRecorderProps) {
                   monoData[i] = (leftChannel[i] + rightChannel[i]) / 2;
                 }
               }
-              
+
               const wav = audioBufferToWav(monoBuffer);
               const monoBlob = new Blob([wav], { type: 'audio/wav' });
               console.log('Sending mono audio blob, size:', monoBlob.size);
@@ -82,18 +83,18 @@ export default function AudioRecorder({ webSocketData }: AudioRecorderProps) {
             }
           }
         };
-        
+
         const audioBufferToWav = (buffer: AudioBuffer) => {
           const length = buffer.length;
           const arrayBuffer = new ArrayBuffer(44 + length * 2);
           const view = new DataView(arrayBuffer);
-          
+
           const writeString = (offset: number, string: string) => {
             for (let i = 0; i < string.length; i++) {
               view.setUint8(offset + i, string.charCodeAt(i));
             }
           };
-          
+
           writeString(0, 'RIFF');
           view.setUint32(4, 36 + length * 2, true);
           writeString(8, 'WAVE');
@@ -107,7 +108,7 @@ export default function AudioRecorder({ webSocketData }: AudioRecorderProps) {
           view.setUint16(34, 16, true);
           writeString(36, 'data');
           view.setUint32(40, length * 2, true);
-          
+
           const channelData = buffer.getChannelData(0);
           let offset = 44;
           for (let i = 0; i < length; i++) {
@@ -115,12 +116,12 @@ export default function AudioRecorder({ webSocketData }: AudioRecorderProps) {
             view.setInt16(offset, sample * 0x7FFF, true);
             offset += 2;
           }
-          
+
           return arrayBuffer;
         };
 
         mediaRecorder.start();
-        
+
         setTimeout(() => {
           if (mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
@@ -150,7 +151,7 @@ export default function AudioRecorder({ webSocketData }: AudioRecorderProps) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       isRecordingRef.current = false;
-      
+
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -159,7 +160,7 @@ export default function AudioRecorder({ webSocketData }: AudioRecorderProps) {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
-      
+
       disconnect();
     }
   };
@@ -171,16 +172,15 @@ export default function AudioRecorder({ webSocketData }: AudioRecorderProps) {
       <div className="fixed bottom-4 right-4 z-50">
         <button
           onClick={isRecording ? stopRecording : startRecording}
-          className={`w-16 h-16 rounded-full shadow-lg transition-all duration-300 ${
-            isRecording 
-              ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-              : 'bg-blue-500 hover:bg-blue-600'
-          }`}
+          className={`w-16 h-16 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center ${isRecording
+              ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+              : 'bg-gray-500 hover:bg-gray-600'
+            }`}
         >
           {isRecording ? (
-            <div className="w-6 h-6 bg-white rounded-sm mx-auto"></div>
+            <div className="w-8 h-8 bg-white rounded-sm"></div>
           ) : (
-            <div className="w-0 h-0 border-l-8 border-l-white border-t-6 border-t-transparent border-b-6 border-b-transparent ml-1"></div>
+            <div className="w-0 h-0 border-l-[20px] border-l-white border-t-[14px] border-t-transparent border-b-[14px] border-b-transparent"></div>
           )}
         </button>
       </div>
@@ -219,7 +219,7 @@ export default function AudioRecorder({ webSocketData }: AudioRecorderProps) {
                 <p className="text-gray-500 text-center py-4 text-sm">No transcriptions yet...</p>
               ) : (
                 <div className="space-y-2">
-                  {transcriptions.map((item) => (
+                  {transcriptions.map((item: TranscriptionResult) => (
                     <div key={`${item.timestamp}_${item.chunkId}`} className="bg-gray-50 p-2 rounded border-l-2 border-blue-400">
                       <div className="flex justify-between items-start mb-1">
                         <span className="text-xs text-gray-500">Chunk {item.chunkId}</span>

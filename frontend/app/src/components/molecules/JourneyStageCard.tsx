@@ -14,7 +14,9 @@ export default function JourneyStageCard({ journeyStage, webSocketData }: Journe
   const stageLabels = ['Greet', 'Discover', 'Pitch', 'Closing'];
   
   const currentStage = webSocketData?.currentStage || 'greeting';
+  const objectionDetected = webSocketData?.objectionDetected || false;
   const sendStageUpdate = webSocketData?.sendStageUpdate;
+  const resolveObjection = webSocketData?.resolveObjection;
   const currentStageIndex = stages.indexOf(currentStage);
 
   useEffect(() => {
@@ -29,6 +31,10 @@ export default function JourneyStageCard({ journeyStage, webSocketData }: Journe
   }, []);
 
   const handleStageClick = (stage: string) => {
+    if (objectionDetected && resolveObjection) {
+      resolveObjection();
+      console.log('Objection resolved');
+    }
     if (sendStageUpdate) {
       sendStageUpdate(stage);
       console.log(`Stage changed to: ${stage}`);
@@ -57,7 +63,9 @@ export default function JourneyStageCard({ journeyStage, webSocketData }: Journe
                   <button 
                     onClick={() => handleStageClick(stage)}
                     className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 transition-all duration-300 cursor-pointer hover:scale-110 z-10 ${
-                      index === currentStageIndex 
+                      objectionDetected && index === currentStageIndex
+                        ? 'bg-red-500 border-red-500'
+                        : index === currentStageIndex 
                         ? 'bg-yellow-500 border-yellow-500' 
                         : index < currentStageIndex 
                         ? 'bg-green-500 border-green-500'

@@ -44,3 +44,10 @@ export interface TranscriptionResult {
   timestamp: number;
   chunkId: number;
 }
+
+export interface JourneyStage {
+  action?: string;
+  explanation?: string[];
+  signals?: string[];
+  lines?: string[];
+}

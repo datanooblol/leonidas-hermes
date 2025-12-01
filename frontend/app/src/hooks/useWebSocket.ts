@@ -147,6 +147,15 @@ export function useWebSocket() {
     }
   }, []);
 
+  const sendChecklistUpdate = useCallback((completedItems: string[]) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'checklist_update',
+        completed_items: completedItems
+      }));
+    }
+  }, []);
+
   const resolveObjection = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
@@ -176,6 +185,7 @@ export function useWebSocket() {
     sendStageUpdate,
     sendManualInfoUpdate,
     sendManualInterestUpdate,
+    sendChecklistUpdate,
     resolveObjection,
     disconnect,
     forceUpdate
