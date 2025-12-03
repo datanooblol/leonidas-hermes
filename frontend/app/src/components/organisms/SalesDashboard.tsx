@@ -66,7 +66,7 @@ export default function SalesDashboard({ webSocketData }: SalesDashboardProps) {
                     CUSTOMER INFO
                   </div>
                   <div className="flex-1 min-h-0 overflow-hidden">
-                    <CustomerInfoCard key={forceUpdate} customerInfo={memoizedCustomerInfo} />
+                    <CustomerInfoCard key={forceUpdate} customerInfo={memoizedCustomerInfo} sendManualInfoUpdate={webSocketData.sendManualInfoUpdate} />
                   </div>
                 </div>
               </div>
@@ -77,7 +77,7 @@ export default function SalesDashboard({ webSocketData }: SalesDashboardProps) {
                     INTEREST
                   </div>
                   <div className="flex-1 min-h-0 overflow-hidden">
-                    <InterestDetectionCard key={forceUpdate} customerInterest={customerInterest} />
+                    <InterestDetectionCard key={forceUpdate} customerInterest={customerInterest} sendManualInterestUpdate={webSocketData.sendManualInterestUpdate} />
                   </div>
                 </div>
               </div>

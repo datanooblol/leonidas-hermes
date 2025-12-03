@@ -70,15 +70,14 @@ export default function JourneyStageCard({ journeyStage, webSocketData }: Journe
             {journeyStage?.action || 'Ask Need'}
           </div>
           <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span>🚢</span>
             <div className="flex gap-1">
               {journeyStage?.signals?.slice(0, 2).map((signal, index) => (
-                <span key={index}>
-                  {signal}{index < (journeyStage?.signals?.length || 2) - 1 ? ',' : ''}
+                <span key={index} className="inline-block px-2 py-1 bg-gray-100 border border-gray-300 rounded-full text-xs text-gray-700">
+                  {signal}
                 </span>
               )) || [
-                <span key="1">hesitation,</span>,
-                <span key="2">curiosity</span>
+                <span key="1" className="inline-block px-2 py-1 bg-gray-100 border border-gray-300 rounded-full text-xs text-gray-700">hesitation</span>,
+                <span key="2" className="inline-block px-2 py-1 bg-gray-100 border border-gray-300 rounded-full text-xs text-gray-700">curiosity</span>
               ]}
             </div>
           </div>
