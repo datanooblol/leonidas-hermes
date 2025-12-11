@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --font-sans: var(--font-inter);
+}
+
+/* --- GEMINI STYLE SCROLLBAR --- */
+@layer utilities {
+  /* สำหรับ Chrome, Edge, Safari */
+  ::-webkit-scrollbar {
+    width: 10px; /* ความกว้างแนวตั้ง */
+    height: 10px; /* ความสูงแนวนอน */
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent; /* พื้นหลัง Track โปร่งใส */
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full border-[3px] border-solid border-transparent bg-clip-content;
+    background-color: #c7c7c7; /* สี Light Mode */
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #a0a0a0; /* สี Light Mode ตอน Hover */
+  }
+
+  /* Dark Mode Overrides (Gemini Colors) */
+  :where([data-theme="dark"]) ::-webkit-scrollbar-thumb {
+    /* สีเทา Gemini (Grey 700 in Material 3) */
+    background-color: #444746; 
+  }
+
+  :where([data-theme="dark"]) ::-webkit-scrollbar-thumb:hover {
+    /* สว่างขึ้นเล็กน้อยตอน Hover */
+    background-color: #5e5e5e; 
+  }
+}
+
+/* สำหรับ Firefox (Optional) */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #c7c7c7 transparent;
+  }
+
+  :where([data-theme="dark"]) * {
+    scrollbar-color: #444746 transparent;
+  }
+}
+
+/* Base Styles */
+@layer base {
+  body {
+    @apply bg-[#F0F4F9] text-gray-900 transition-colors duration-300;
+  }
+  
+  :where([data-theme="dark"]) body {
+    /* พื้นหลัง Gemini (Dark Surface) */
+    @apply bg-[#131314] text-[#E3E3E3];
+  }
+}

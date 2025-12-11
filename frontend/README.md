@@ -1,45 +1,36 @@
-# Real-time Transcription Frontend
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Next.js frontend for real-time audio transcription with separate recording and display components.
+## Getting Started
 
-## Setup
+First, run the development server:
 
 ```bash
-# Install dependencies
-npm install
-
-# Run development server
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-Frontend runs on: http://localhost:3000
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Architecture
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-### Components
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-- **AudioRecorder**: Records audio in 2-second chunks and uploads to backend
-- **TranscriptionDisplay**: Polls backend for transcription results and displays them
+## Learn More
 
-### Key Features
+To learn more about Next.js, take a look at the following resources:
 
-- ✅ Real-time audio recording with 2-second chunking
-- ✅ Non-blocking uploads (recording continues while uploading)
-- ✅ Independent transcription polling and display
-- ✅ Clean component separation
-- ✅ TypeScript for type safety
-- ✅ Tailwind CSS for styling
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-## Usage
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-1. Click "Start Recording" to begin audio capture
-2. Audio is automatically chunked every 2 seconds and uploaded
-3. Transcriptions appear in real-time as they're processed
-4. Click "Stop Recording" to end the session
+## Deploy on Vercel
 
-## Backend Integration
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-- **Upload**: POST to `http://localhost:8000/upload_chunk`
-- **Transcription**: GET from `http://localhost:8000/get_transcription/{key}`
-
-Make sure the FastAPI backend is running on port 8000 before using the frontend.
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

@@ -1,19 +1,30 @@
-import '../styles/globals.css'
-import type { Metadata } from 'next'
+// app/layout.tsx
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { ThemeProvider } from '@/providers/ThemeProvider';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Real-time Speech Transcription',
-  description: 'Record audio in 2-second chunks and see transcriptions in real-time',
-}
+  title: 'Leonidas Hermes',
+  description: 'Telesales Dashboard',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+        
+        
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
-  )
+  );
 }
