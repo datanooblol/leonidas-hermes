@@ -75,7 +75,7 @@ export const useWebSocket = () => {
           }
         };
         
-        mediaRecorder.current.start(100);
+        mediaRecorder.current.start(2000);
       } catch (error) {
         console.error('Error accessing microphone:', error);
         setIsRecording(false);
