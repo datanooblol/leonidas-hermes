@@ -1,6 +1,5 @@
 import React from 'react';
 import { CustomerSidebar, JourneyGuide, LogoutModal, Navbar, ProductModal, ProductSidebar, TranscriptModal, WarningModal } from '../organisms';
-import { WARNING_CONTENT } from '@/data/mock';
 import { CustomerInfo, Product, Stage } from '@/types';
 
 interface SimulationState {
@@ -8,7 +7,6 @@ interface SimulationState {
   isRecording: boolean;
   showWarning: boolean;
   setShowWarning: (show: boolean) => void;
-  progress: number;
   toggleRecording: () => void;
   handleStageChange: (stage: Stage) => void;
   resetSession: () => void;
@@ -41,6 +39,8 @@ interface DashboardTemplateProps {
     selectedProduct: Product | null;
     showTranscript: boolean;
     showLogoutConfirm: boolean;
+    transcriptText?: string;
+    onObjectionResolved?: () => void;
   };
 }
 
@@ -84,7 +84,6 @@ export const DashboardTemplate = (props: DashboardTemplateProps) => {
 
         <JourneyGuide 
           currentStage={simulationState.currentStage}
-          progress={simulationState.progress}
           stages={['Greet', 'Discover', 'Pitch', 'Closing']}
           onStageChange={simulationState.handleStageChange}
           guide={simulationState.guide}
@@ -108,8 +107,8 @@ export const DashboardTemplate = (props: DashboardTemplateProps) => {
       </div>
 
       {modals.selectedProduct && <ProductModal product={modals.selectedProduct} onClose={() => actions.setSelectedProduct(null)} />}
-      {modals.showTranscript && <TranscriptModal onClose={() => actions.setShowTranscript(false)} />}
-      {simulationState.showWarning && <WarningModal content={WARNING_CONTENT} onClose={() => simulationState.setShowWarning(false)} />}
+      {modals.showTranscript && <TranscriptModal transcript={modals.transcriptText || ''} onClose={() => actions.setShowTranscript(false)} />}
+      {simulationState.showWarning && simulationState.guide && <WarningModal content={simulationState.guide} onClose={() => simulationState.setShowWarning(false)} onResolve={modals.onObjectionResolved} />}
       {modals.showLogoutConfirm && <LogoutModal onConfirm={actions.handleLogout} onCancel={() => actions.setShowLogoutConfirm(false)} />}
     </div>
   );

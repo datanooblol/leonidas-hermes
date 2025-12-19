@@ -21,26 +21,27 @@ export default function DashboardPage() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [transcriptText, setTranscriptText] = useState('');
 
   // --- WebSocket Connection ---
   const webSocketState = useWebSocket();
 
   // --- Data State ---
   const [customer, setCustomer] = useState<CustomerInfo>({
-    name: "คุณสมชาย ใจดี",
-    age: "35",
-    income: "45000",
-    status: "Married",
-    children: "1",
+    name: "",
+    age: "",
+    income: "",
+    status: "",
+    children: "",
   });
 
   const [localInterests, setLocalInterests] = useState<Record<string, boolean>>({
-    "Life Insurance": true,
+    "Life Insurance": false,
     "Health Insurance": false,
     "Critical Illness": false,
     "Retirement Planning": false,
     "Accident Insurance": false,
-    "Tax Benefits": true,
+    "Tax Benefits": false,
     "Education Fund": false,
     Investment: false,
   });
@@ -71,6 +72,13 @@ export default function DashboardPage() {
       setLocalInterests(prev => ({ ...prev, ...mappedInterests }));
     }
   }, [webSocketState.interests]);
+
+  // Sync transcription
+  useEffect(() => {
+    if (webSocketState.transcription) {
+      setTranscriptText(prev => prev + '\n' + webSocketState.transcription);
+    }
+  }, [webSocketState.transcription]);
 
   const filteredProducts = webSocketState.products.length > 0 
     ? webSocketState.products.map(p => ({
@@ -122,6 +130,13 @@ export default function DashboardPage() {
     });
   };
 
+  const handleObjectionResolved = () => {
+    webSocketState.sendMessage({
+      type: "manual_resolve_objection",
+      data: { resolved: true }
+    });
+  };
+
   return (
     <DashboardTemplate
       // Layout props
@@ -150,6 +165,8 @@ export default function DashboardPage() {
         selectedProduct,
         showTranscript,
         showLogoutConfirm,
+        transcriptText,
+        onObjectionResolved: handleObjectionResolved,
       }}
     />
   );

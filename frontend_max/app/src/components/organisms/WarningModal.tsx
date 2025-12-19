@@ -1,14 +1,14 @@
 import React from 'react';
 import { Check, Lightbulb, Sparkles, SkipForward, ShieldAlert, Siren } from 'lucide-react';
 import { Button } from '../atoms';
-import { WarningData } from '@/types';
 
 interface WarningModalProps {
-  content: WarningData;
+  content: any; // WebSocket objection data
   onClose: () => void;
+  onResolve?: () => void;
 }
 
-export const WarningModal = ({ content, onClose }: WarningModalProps) => (
+export const WarningModal = ({ content, onClose, onResolve }: WarningModalProps) => (
   <div className="fixed inset-0 z-90 flex items-center justify-center p-4 overflow-hidden">
     {/* 🔒 Locked Backdrop with Red Tint */}
     <div className="absolute inset-0 bg-[#2a0a0a]/90 backdrop-blur-md cursor-not-allowed animate-in fade-in duration-300" />
@@ -36,7 +36,7 @@ export const WarningModal = ({ content, onClose }: WarningModalProps) => (
                 <Siren size={12} className="animate-bounce" /> Immediate Action Required
             </div>
             <h2 className="text-3xl md:text-4xl font-black text-white leading-tight drop-shadow-[0_2px_10px_rgba(220,38,38,0.5)]">
-              &quot;{content.concern}&quot;
+              Objection Detected!
             </h2>
           </div>
       </div>
@@ -54,7 +54,7 @@ export const WarningModal = ({ content, onClose }: WarningModalProps) => (
                 <h4 className="text-sm font-bold text-gray-300 uppercase tracking-wide">Winning Strategy</h4>
             </div>
             <p className="text-xl text-white font-medium relative z-10">
-              {content.action}
+              {content?.action || 'Handle customer objection immediately'}
             </p>
           </div>
 
@@ -62,7 +62,11 @@ export const WarningModal = ({ content, onClose }: WarningModalProps) => (
           <div>
             <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 ml-1">Suggested Script</h4>
             <div className="space-y-3">
-                {content.lines.map((line, i) => (
+                {(content?.lines_to_say && content.lines_to_say.length > 0 ? content.lines_to_say : [
+                  'I understand your concern completely',
+                  'Let me address that point for you',
+                  'This is actually a great question'
+                ]).map((line: string, i: number) => (
                   <div key={i} className="flex gap-4 p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors cursor-default">
                     <span className="shrink-0 w-6 h-6 rounded-full bg-red-900/50 text-red-400 border border-red-800 flex items-center justify-center text-xs font-bold">{i+1}</span>
                     <p className="text-gray-200 leading-relaxed font-light text-base">{line}</p>
@@ -83,7 +87,10 @@ export const WarningModal = ({ content, onClose }: WarningModalProps) => (
           </Button>
           <Button 
             variant="success" 
-            onClick={onClose} 
+            onClick={() => {
+              onResolve?.();
+              onClose();
+            }} 
             className="h-14 bg-red-600 hover:bg-red-700 text-white border-none shadow-[0_0_20px_rgba(220,38,38,0.4)] text-lg font-bold"
           >
             <Check size={20} /> RESOLVE NOW

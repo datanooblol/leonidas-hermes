@@ -5,13 +5,12 @@ import { Card } from '../atoms';
 
 interface JourneyGuideProps {
   currentStage: Stage;
-  progress: number;
   stages: Stage[];
   onStageChange: (stage: Stage) => void;
   guide?: any;
 }
 
-export const JourneyGuide = ({ currentStage, progress, stages, onStageChange, guide }: JourneyGuideProps) => {
+export const JourneyGuide = ({ currentStage, stages, onStageChange, guide }: JourneyGuideProps) => {
   const defaultGuide = {
     action: "Waiting for AI guidance...",
     explanation: "Connect to backend to receive real-time guidance",
@@ -20,6 +19,10 @@ export const JourneyGuide = ({ currentStage, progress, stages, onStageChange, gu
   };
   
   const currentGuide = guide || defaultGuide;
+  
+  // Calculate progress based on current stage
+  const currentStageIndex = stages.indexOf(currentStage);
+  const calculatedProgress = currentStageIndex >= 0 ? (currentStageIndex / (stages.length - 1)) * 100 : 0;
 
   return (
     <div className="flex-1 flex flex-col gap-4 h-full overflow-hidden pb-2">
@@ -41,14 +44,14 @@ export const JourneyGuide = ({ currentStage, progress, stages, onStageChange, gu
                
                <div 
                  className="absolute top-4 left-0 h-1 bg-green-500 -translate-y-1/2 transition-all duration-300 ease-out rounded-full shadow-[0_0_10px_rgba(34,197,94,0.4)]"
-                 style={{ left: '16px', width: `calc(${progress}% - ${32 * (progress / 100)}px)` }}
+                 style={{ left: '16px', width: `calc(${calculatedProgress}% - ${32 * (calculatedProgress / 100)}px)` }}
                ></div>
 
                <div className="relative flex justify-between items-center z-10">
                  {stages.map((stage, idx) => {
                    const isActive = stage === currentStage;
                    const stageThreshold = (idx / (stages.length - 1)) * 100;
-                   const isPast = progress >= stageThreshold;
+                   const isPast = calculatedProgress >= stageThreshold;
 
                    return (
                      <button 

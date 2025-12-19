@@ -14,6 +14,8 @@ export const useWebSocket = () => {
   
   const ws = useRef<WebSocket | null>(null);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     ws.current = new WebSocket('ws://localhost:8000/ws');
@@ -34,18 +36,37 @@ export const useWebSocket = () => {
           setInterests(data.customer_interest);
           break;
         case 'guide':
-          setCurrentStage(data.stage_name as Stage);
+          // Map backend stage names to frontend
+          const stageMap: Record<string, Stage> = {
+            'greeting': 'Greet',
+            'discovery': 'Discover', 
+            'pitch': 'Pitch',
+            'closing': 'Closing'
+          };
+          if (data.stage_name) {
+            setCurrentStage(stageMap[data.stage_name] || 'Greet');
+          }
           setGuide(data.guide);
           break;
         case 'products':
           setProducts(data.products);
           break;
         case 'objection':
+          console.log('🚨 Objection detected:', data);
           setShowWarning(true);
-          setGuide(data.guide);
+          // Set objection guide even if empty, with fallback data
+          const objectionGuide = data.guide || {
+            action: 'Handle customer objection',
+            explanation: 'Customer has raised a concern that needs to be addressed',
+            lines_to_say: ['I understand your concern', 'Let me address that for you'],
+            signals: ['objection_detected']
+          };
+          setGuide(objectionGuide);
           break;
         case 'objection_resolved':
+          console.log('✅ Objection resolved');
           setShowWarning(false);
+          setGuide(null);
           break;
       }
     };
@@ -61,21 +82,60 @@ export const useWebSocket = () => {
 
   const toggleRecording = useCallback(async () => {
     if (isRecording) {
+      // Stop recording
       setIsRecording(false);
-      mediaRecorder.current?.stop();
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (mediaRecorder.current) {
+        mediaRecorder.current.stop();
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
     } else {
+      // Start recording
       setIsRecording(true);
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder.current = new MediaRecorder(stream);
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: { sampleRate: 44100, channelCount: 1 } 
+        });
+        streamRef.current = stream;
+        
+        mediaRecorder.current = new MediaRecorder(stream, {
+          mimeType: 'audio/webm;codecs=opus'
+        });
+        
+        let chunks: Blob[] = [];
         
         mediaRecorder.current.ondataavailable = (event) => {
-          if (event.data.size > 0 && ws.current?.readyState === WebSocket.OPEN) {
-            ws.current.send(event.data);
+          if (event.data.size > 0) chunks.push(event.data);
+        };
+        
+        mediaRecorder.current.onstop = () => {
+          if (chunks.length > 0 && ws.current?.readyState === WebSocket.OPEN) {
+            const blob = new Blob(chunks, { type: 'audio/webm;codecs=opus' });
+            ws.current.send(blob);
+            chunks = [];
           }
         };
         
-        mediaRecorder.current.start(2000);
+        mediaRecorder.current.start();
+        
+        // Send audio chunks every 2 seconds
+        intervalRef.current = setInterval(() => {
+          if (mediaRecorder.current?.state === 'recording') {
+            mediaRecorder.current.stop();
+            setTimeout(() => {
+              if (mediaRecorder.current?.state === 'inactive') {
+                mediaRecorder.current.start();
+              }
+            }, 100);
+          }
+        }, 2000);
+        
       } catch (error) {
         console.error('Error accessing microphone:', error);
         setIsRecording(false);
@@ -84,9 +144,16 @@ export const useWebSocket = () => {
   }, [isRecording]);
 
   const handleStageChange = useCallback((stage: Stage) => {
+    // Map frontend stage names to backend
+    const stageMap: Record<Stage, string> = {
+      'Greet': 'greeting',
+      'Discover': 'discovery',
+      'Pitch': 'pitch', 
+      'Closing': 'closing'
+    };
     sendMessage({
       type: 'guide',
-      data: { stage_name: stage.toLowerCase() }
+      data: { stage_name: stageMap[stage] }
     });
   }, [sendMessage]);
 
@@ -99,7 +166,19 @@ export const useWebSocket = () => {
     setInterests({});
     setProducts([]);
     setGuide(null);
-    mediaRecorder.current?.stop();
+    
+    // Clean up recording
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    if (mediaRecorder.current) {
+      mediaRecorder.current.stop();
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
   }, []);
 
   return {
@@ -116,7 +195,6 @@ export const useWebSocket = () => {
     toggleRecording,
     handleStageChange,
     resetSession,
-    sendMessage,
-    progress: 0
+    sendMessage
   };
 };
