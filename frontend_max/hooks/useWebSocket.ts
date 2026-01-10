@@ -1,6 +1,40 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Stage } from '@/types';
 
+function convertToWav(samples: Float32Array, sampleRate: number): Blob {
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+  
+  const writeString = (offset: number, string: string) => {
+    for (let i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i));
+    }
+  };
+  
+  writeString(0, 'RIFF');
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(36, 'data');
+  view.setUint32(40, samples.length * 2, true);
+  
+  let offset = 44;
+  for (let i = 0; i < samples.length; i++) {
+    const sample = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(offset, sample * 0x7FFF, true);
+    offset += 2;
+  }
+  
+  return new Blob([buffer], { type: 'audio/wav' });
+}
+
 export const useWebSocket = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -13,9 +47,8 @@ export const useWebSocket = () => {
   const [guide, setGuide] = useState<any>(null);
   
   const ws = useRef<WebSocket | null>(null);
-  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     ws.current = new WebSocket('ws://localhost:8000/ws');
@@ -82,59 +115,57 @@ export const useWebSocket = () => {
 
   const toggleRecording = useCallback(async () => {
     if (isRecording) {
-      // Stop recording
       setIsRecording(false);
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      if (mediaRecorder.current) {
-        mediaRecorder.current.stop();
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
       }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
       }
     } else {
-      // Start recording
       setIsRecording(true);
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
-          audio: { sampleRate: 44100, channelCount: 1 } 
+          audio: { channelCount: 1 } 
         });
         streamRef.current = stream;
         
-        mediaRecorder.current = new MediaRecorder(stream, {
-          mimeType: 'audio/webm;codecs=opus'
-        });
+        const audioContext = new AudioContext();
+        audioContextRef.current = audioContext;
         
-        let chunks: Blob[] = [];
+        const source = audioContext.createMediaStreamSource(stream);
+        const processor = audioContext.createScriptProcessor(4096, 1, 1);
         
-        mediaRecorder.current.ondataavailable = (event) => {
-          if (event.data.size > 0) chunks.push(event.data);
-        };
+        const buffer: Float32Array[] = [];
+        const requiredSamples = audioContext.sampleRate * 2;
         
-        mediaRecorder.current.onstop = () => {
-          if (chunks.length > 0 && ws.current?.readyState === WebSocket.OPEN) {
-            const blob = new Blob(chunks, { type: 'audio/webm;codecs=opus' });
-            ws.current.send(blob);
-            chunks = [];
+        processor.onaudioprocess = (event) => {
+          const samples = event.inputBuffer.getChannelData(0);
+          buffer.push(new Float32Array(samples));
+          
+          const totalSamples = buffer.reduce((sum, arr) => sum + arr.length, 0);
+          
+          if (totalSamples >= requiredSamples) {
+            const combined = new Float32Array(totalSamples);
+            let offset = 0;
+            buffer.forEach(arr => {
+              combined.set(arr, offset);
+              offset += arr.length;
+            });
+            
+            if (ws.current?.readyState === WebSocket.OPEN) {
+              const wavBlob = convertToWav(combined, audioContext.sampleRate);
+              ws.current.send(wavBlob);
+            }
+            
+            buffer.length = 0;
           }
         };
         
-        mediaRecorder.current.start();
-        
-        // Send audio chunks every 2 seconds
-        intervalRef.current = setInterval(() => {
-          if (mediaRecorder.current?.state === 'recording') {
-            mediaRecorder.current.stop();
-            setTimeout(() => {
-              if (mediaRecorder.current?.state === 'inactive') {
-                mediaRecorder.current.start();
-              }
-            }, 100);
-          }
-        }, 2000);
+        source.connect(processor);
+        processor.connect(audioContext.destination);
         
       } catch (error) {
         console.error('Error accessing microphone:', error);
@@ -168,12 +199,9 @@ export const useWebSocket = () => {
     setGuide(null);
     
     // Clean up recording
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    if (mediaRecorder.current) {
-      mediaRecorder.current.stop();
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
     }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
