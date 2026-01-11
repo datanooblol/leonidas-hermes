@@ -148,19 +148,33 @@ export const useWebSocket = () => {
           const totalSamples = buffer.reduce((sum, arr) => sum + arr.length, 0);
           
           if (totalSamples >= requiredSamples) {
-            const combined = new Float32Array(totalSamples);
+            // ส่งเฉพาะส่วนที่ครบ requiredSamples
+            let samplesUsed = 0;
+            let usedChunks = 0;
+            
+            for (let i = 0; i < buffer.length; i++) {
+              if (samplesUsed + buffer[i].length <= requiredSamples) {
+                samplesUsed += buffer[i].length;
+                usedChunks++;
+              } else {
+                break;
+              }
+            }
+            
+            const combined = new Float32Array(samplesUsed);
             let offset = 0;
-            buffer.forEach(arr => {
-              combined.set(arr, offset);
-              offset += arr.length;
-            });
+            for (let i = 0; i < usedChunks; i++) {
+              combined.set(buffer[i], offset);
+              offset += buffer[i].length;
+            }
             
             if (ws.current?.readyState === WebSocket.OPEN) {
               const wavBlob = convertToWav(combined, audioContext.sampleRate);
               ws.current.send(wavBlob);
             }
             
-            buffer.length = 0;
+            // เอาส่วนที่ใช้แล้วออกจาก buffer
+            buffer.splice(0, usedChunks);
           }
         };
         
