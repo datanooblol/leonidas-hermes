@@ -1,5 +1,6 @@
 import React from 'react';
 import { CustomerSidebar, JourneyGuide, LogoutModal, Navbar, ProductModal, ProductSidebar, TranscriptModal, WarningModal } from '../organisms';
+import { AudioWaveform } from '../AudioWaveform';
 import { CustomerInfo, Product, Stage } from '@/types';
 
 interface SimulationState {
@@ -11,6 +12,13 @@ interface SimulationState {
   handleStageChange: (stage: Stage) => void;
   resetSession: () => void;
   guide?: any;
+}
+
+interface AudioState {
+  isPlayingFile: boolean;
+  audioProgress: number;
+  audioDuration: number;
+  analyserNode: AnalyserNode | null;
 }
 
 interface DashboardTemplateProps {
@@ -30,6 +38,8 @@ interface DashboardTemplateProps {
   actions: {
     handleLogout: () => void;
     handleMicClick: () => void;
+    handlePlayAudioFile: () => void;
+    handleStopAudio: () => void;
     setSelectedProduct: (p: Product | null) => void;
     setShowTranscript: (v: boolean) => void;
     setShowLogoutConfirm: (v: boolean) => void;
@@ -42,6 +52,8 @@ interface DashboardTemplateProps {
     transcriptText?: string;
     onObjectionResolved?: () => void;
   };
+
+  audioState: AudioState;
 }
 
 export const DashboardTemplate = (props: DashboardTemplateProps) => {
@@ -53,7 +65,8 @@ export const DashboardTemplate = (props: DashboardTemplateProps) => {
     interests, toggleInterest,
     filteredProducts,
     actions,
-    modals
+    modals,
+    audioState
   } = props;
 
   return (
@@ -92,6 +105,30 @@ export const DashboardTemplate = (props: DashboardTemplateProps) => {
         <div className={`fixed bottom-25 right-8 z-50 transition-all duration-300 flex flex-col items-center gap-4 ${productSidebarOpen ? 'mr-80' : 'mr-0'}`}>
           <button onClick={() => actions.setShowTranscript(true)} className="w-12 h-12 rounded-full shadow-lg flex items-center justify-center bg-yellow-500 text-white hover:scale-105 transition-transform cursor-pointer">
              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </button>
+
+          {audioState.isPlayingFile && (
+            <div className="w-64 bg-gray-800 p-4 rounded-lg shadow-lg">
+              <AudioWaveform
+                analyserNode={audioState.analyserNode}
+                isPlaying={audioState.isPlayingFile}
+                progress={audioState.audioProgress}
+                duration={audioState.audioDuration}
+              />
+              <button
+                onClick={actions.handleStopAudio}
+                className="w-full mt-3 px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+              >
+                Stop
+              </button>
+            </div>
+          )}
+          
+          <button 
+            onClick={actions.handlePlayAudioFile}
+            className="w-12 h-12 rounded-full shadow-lg flex items-center justify-center bg-green-500 text-white hover:scale-105 transition-transform cursor-pointer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
           </button>
           
           <button 

@@ -38,6 +38,9 @@ function convertToWav(samples: Float32Array, sampleRate: number): Blob {
 export const useWebSocket = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isPlayingFile, setIsPlayingFile] = useState(false);
+  const [audioProgress, setAudioProgress] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
   const [currentStage, setCurrentStage] = useState<Stage>('Greet');
   const [showWarning, setShowWarning] = useState(false);
   const [transcription, setTranscription] = useState('');
@@ -49,6 +52,10 @@ export const useWebSocket = () => {
   const ws = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const fileAudioContextRef = useRef<AudioContext | null>(null);
+  const fileSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     ws.current = new WebSocket('ws://localhost:8000/ws');
@@ -202,8 +209,123 @@ export const useWebSocket = () => {
     });
   }, [sendMessage]);
 
+  const playAudioFile = useCallback(async (file: File) => {
+    setIsPlayingFile(true);
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      fileAudioContextRef.current = audioContext;
+      
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      setAudioDuration(audioBuffer.duration);
+      
+      const source = audioContext.createBufferSource();
+      fileSourceRef.current = source;
+      source.buffer = audioBuffer;
+      
+      const analyser = audioContext.createAnalyser();
+      analyserRef.current = analyser;
+      analyser.fftSize = 256;
+      
+      const splitter = audioContext.createChannelSplitter(1);
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      const sampleRate = audioContext.sampleRate;
+      const buffer: Float32Array[] = [];
+      const requiredSamples = sampleRate * 2;
+      let lastSendTime = 0;
+      
+      processor.onaudioprocess = (event) => {
+        const samples = event.inputBuffer.getChannelData(0);
+        const output = event.outputBuffer.getChannelData(0);
+        output.set(samples);
+        buffer.push(new Float32Array(samples));
+        
+        const totalSamples = buffer.reduce((sum, arr) => sum + arr.length, 0);
+        const now = audioContext.currentTime;
+        
+        if (totalSamples >= requiredSamples && now - lastSendTime >= 2) {
+          let samplesUsed = 0;
+          let usedChunks = 0;
+          
+          for (let i = 0; i < buffer.length; i++) {
+            if (samplesUsed + buffer[i].length <= requiredSamples) {
+              samplesUsed += buffer[i].length;
+              usedChunks++;
+            } else {
+              break;
+            }
+          }
+          
+          const combined = new Float32Array(samplesUsed);
+          let offset = 0;
+          for (let i = 0; i < usedChunks; i++) {
+            combined.set(buffer[i], offset);
+            offset += buffer[i].length;
+          }
+          
+          if (ws.current?.readyState === WebSocket.OPEN) {
+            const wavBlob = convertToWav(combined, sampleRate);
+            ws.current.send(wavBlob);
+          }
+          
+          buffer.splice(0, usedChunks);
+          lastSendTime = now;
+        }
+      };
+      
+      source.connect(processor);
+      processor.connect(analyser);
+      analyser.connect(audioContext.destination);
+      source.start(0);
+      
+      const updateProgress = () => {
+        if (fileSourceRef.current && fileAudioContextRef.current) {
+          const progress = (fileAudioContextRef.current.currentTime / audioBuffer.duration) * 100;
+          setAudioProgress(Math.min(progress, 100));
+          animationFrameRef.current = requestAnimationFrame(updateProgress);
+        }
+      };
+      animationFrameRef.current = requestAnimationFrame(updateProgress);
+      
+      source.onended = () => {
+        setIsPlayingFile(false);
+        setAudioProgress(0);
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        if (fileAudioContextRef.current) {
+          fileAudioContextRef.current.close();
+          fileAudioContextRef.current = null;
+        }
+      };
+    } catch (error) {
+      console.error('Error playing audio file:', error);
+      setIsPlayingFile(false);
+    }
+  }, []);
+
+  const uploadAudioFile = useCallback(async (file: File) => {
+    // ไม่ต้องส่งเพราะ playAudioFile จะส่ง batch แล้ว
+    console.log('Audio file ready to play and send in batches');
+  }, []);
+
+  const stopAudioFile = useCallback(() => {
+    if (fileSourceRef.current) {
+      fileSourceRef.current.stop();
+      fileSourceRef.current = null;
+    }
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    setIsPlayingFile(false);
+    setAudioProgress(0);
+  }, []);
+
   const resetSession = useCallback(() => {
     setIsRecording(false);
+    setIsPlayingFile(false);
+    setAudioProgress(0);
+    setAudioDuration(0);
     setCurrentStage('Greet');
     setShowWarning(false);
     setTranscription('');
@@ -212,7 +334,6 @@ export const useWebSocket = () => {
     setProducts([]);
     setGuide(null);
     
-    // Clean up recording
     if (audioContextRef.current) {
       audioContextRef.current.close();
       audioContextRef.current = null;
@@ -221,12 +342,26 @@ export const useWebSocket = () => {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+    if (fileSourceRef.current) {
+      fileSourceRef.current.stop();
+      fileSourceRef.current = null;
+    }
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    if (fileAudioContextRef.current) {
+      fileAudioContextRef.current.close();
+      fileAudioContextRef.current = null;
+    }
   }, []);
 
   return {
     isConnected,
     currentStage,
     isRecording,
+    isPlayingFile,
+    audioProgress,
+    audioDuration,
     showWarning,
     setShowWarning,
     transcription,
@@ -234,7 +369,11 @@ export const useWebSocket = () => {
     interests,
     products,
     guide,
+    analyserNode: analyserRef.current,
     toggleRecording,
+    playAudioFile,
+    uploadAudioFile,
+    stopAudioFile,
     handleStageChange,
     resetSession,
     sendMessage

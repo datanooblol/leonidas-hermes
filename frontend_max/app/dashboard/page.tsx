@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 // Data & Types
@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [showTranscript, setShowTranscript] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [transcriptText, setTranscriptText] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // --- WebSocket Connection ---
   const webSocketState = useWebSocket();
@@ -137,37 +138,69 @@ export default function DashboardPage() {
     });
   };
 
+  const handlePlayAudioFile = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      webSocketState.playAudioFile(file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
-    <DashboardTemplate
-      // Layout props
-      sidebarOpen={sidebarOpen}
-      setSidebarOpen={setSidebarOpen}
-      productSidebarOpen={productSidebarOpen}
-      setProductSidebarOpen={setProductSidebarOpen}
-      // WebSocket Logic
-      simulationState={webSocketState}
-      // Data Props
-      customer={customer}
-      setCustomer={handleCustomerUpdate}
-      interests={localInterests}
-      toggleInterest={toggleInterest}
-      filteredProducts={filteredProducts}
-      // Actions
-      actions={{
-        handleLogout,
-        handleMicClick: webSocketState.toggleRecording,
-        setSelectedProduct,
-        setShowTranscript,
-        setShowLogoutConfirm,
-      }}
-      // Modals
-      modals={{
-        selectedProduct,
-        showTranscript,
-        showLogoutConfirm,
-        transcriptText,
-        onObjectionResolved: handleObjectionResolved,
-      }}
-    />
+    <>
+      <DashboardTemplate
+        // Layout props
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        productSidebarOpen={productSidebarOpen}
+        setProductSidebarOpen={setProductSidebarOpen}
+        // WebSocket Logic
+        simulationState={webSocketState}
+        // Data Props
+        customer={customer}
+        setCustomer={handleCustomerUpdate}
+        interests={localInterests}
+        toggleInterest={toggleInterest}
+        filteredProducts={filteredProducts}
+        // Actions
+        actions={{
+          handleLogout,
+          handleMicClick: webSocketState.toggleRecording,
+          handlePlayAudioFile,
+          handleStopAudio: webSocketState.stopAudioFile,
+          setSelectedProduct,
+          setShowTranscript,
+          setShowLogoutConfirm,
+        }}
+        // Modals
+        modals={{
+          selectedProduct,
+          showTranscript,
+          showLogoutConfirm,
+          transcriptText,
+          onObjectionResolved: handleObjectionResolved,
+        }}
+        // Audio File Props
+        audioState={{
+          isPlayingFile: webSocketState.isPlayingFile,
+          audioProgress: webSocketState.audioProgress,
+          audioDuration: webSocketState.audioDuration,
+          analyserNode: webSocketState.analyserNode,
+        }}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="audio/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+    </>
   );
 }
