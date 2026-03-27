@@ -98,18 +98,26 @@ export const useWebSocket = () => {
           setTranscription(data.transcription);
           break;
         case 'information':
-          if (data.status === 'updated') {
-            setCustomerInfo(data.customer_information);
+          console.log('📨 [INFO] Received information message:', data);
+          if (true) {
+            // บังคับสร้าง object ใหม่ + timestamp เพื่อให้ React รู้ว่าเปลี่ยน
+            const newInfo = {...data.customer_information, _timestamp: Date.now()};
+            console.log('📨 [INFO] Setting customerInfo:', newInfo);
+            setCustomerInfo(newInfo);
             console.log('✅ Customer info updated:', data.customer_information);
-          } else if (data.status === 'no_change') {
+          } else if (false) {
             console.log('ℹ️ Customer info: no changes');
           }
           break;
         case 'interest':
-          if (data.status === 'updated') {
-            setInterests(data.customer_interest);
+          console.log('📨 [INTEREST] Received interest message:', data);
+          if (true) {
+            // บังคับสร้าง object ใหม่ + timestamp เพื่อให้ React รู้ว่าเปลี่ยน
+            const newInterest = {...data.customer_interest, _timestamp: Date.now()};
+            console.log('📨 [INTEREST] Setting interests:', newInterest);
+            setInterests(newInterest);
             console.log('✅ Customer interest updated:', data.customer_interest);
-          } else if (data.status === 'no_change') {
+          } else if (false) {
             console.log('ℹ️ Customer interest: no changes');
           }
           break;

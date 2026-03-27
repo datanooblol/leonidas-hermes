@@ -149,31 +149,37 @@ export const DashboardPage = () => {
 
   // Sync backend data to local state
   useEffect(() => {
+    console.log('🔄 [EFFECT] customerInfo changed:', wsState.customerInfo);
     if (wsState.customerInfo && Object.keys(wsState.customerInfo).length > 0) {
-      setLocalCustomer(prev => ({
-        ...prev,
-        name: wsState.customerInfo.name || prev.name,
-        age: wsState.customerInfo.age?.toString() || prev.age,
-        income: wsState.customerInfo.income_per_month?.toString() || prev.income,
-        status: wsState.customerInfo.marital_status || prev.status,
-        children: wsState.customerInfo.number_of_children?.toString() || prev.children,
-      }));
+      const d = wsState.customerInfo;
+      const newCustomer = {
+        name: d.name || '',
+        age: d.age !== undefined ? d.age.toString() : '',
+        income: d.income_per_month !== undefined ? d.income_per_month.toString() : '',
+        status: d.marital_status || 'Single',
+        children: d.number_of_children !== undefined ? d.number_of_children.toString() : '0',
+      };
+      console.log('✅ [SYNC] Setting customer to:', newCustomer);
+      setLocalCustomer(newCustomer);
     }
   }, [wsState.customerInfo]);
 
   useEffect(() => {
+    console.log('🔄 [EFFECT] interests changed:', wsState.interests);
     if (wsState.interests && Object.keys(wsState.interests).length > 0) {
-      const mappedInterests = {
-        "Life Insurance": wsState.interests.life_insurance || false,
-        "Health Insurance": wsState.interests.health_insurance || false,
-        "Critical Illness": wsState.interests.critical_illness || false,
-        "Retirement Planning": wsState.interests.retirement_planning || false,
-        "Accident Insurance": wsState.interests.accident_insurance || false,
-        "Tax Benefits": wsState.interests.tax_benefits || false,
-        "Education Fund": wsState.interests.education_fund || false,
-        "Investment": wsState.interests.investment || false,
+      const i = wsState.interests;
+      const newInterests = {
+        "Life Insurance": i.life_insurance ?? false,
+        "Health Insurance": i.health_insurance ?? false,
+        "Critical Illness": i.critical_illness ?? false,
+        "Retirement Planning": i.retirement_planning ?? false,
+        "Accident Insurance": i.accident_insurance ?? false,
+        "Tax Benefits": i.tax_benefits ?? false,
+        "Education Fund": i.education_fund ?? false,
+        "Investment": i.investment ?? false,
       };
-      setLocalInterests(prev => ({ ...prev, ...mappedInterests }));
+      console.log('✅ [SYNC] Setting interests to:', newInterests);
+      setLocalInterests(newInterests);
     }
   }, [wsState.interests]);
 
@@ -183,6 +189,11 @@ export const DashboardPage = () => {
       setTranscriptText(prev => prev + '\n' + wsState.transcription);
     }
   }, [wsState.transcription]);
+
+  // Debug: Log localCustomer changes
+  useEffect(() => {
+    console.log('👤 [STATE] localCustomer changed to:', localCustomer);
+  }, [localCustomer]);
 
   // Use backend products if available, otherwise fallback to mock
   const products = wsState.products.length > 0 

@@ -41,6 +41,13 @@ async def filter_and_send_products(websocket, products_df):
         
         if not filters:
             print("ℹ️ No customer data available for filtering")
+            # Send empty products list
+            await websocket.send_text(json.dumps({
+                "type": "products",
+                "products": [],
+                "count": 0,
+                "message": "No customer data for filtering"
+            }))
             return
         
         # Filter products
@@ -59,16 +66,18 @@ async def filter_and_send_products(websocket, products_df):
         # Check if products changed using memory
         is_updated = conversation_memory.update_product_list(products_list)
         
+        # Always send products when customer data exists (for debugging)
+        await websocket.send_text(json.dumps({
+            "type": "products",
+            "products": products_list,
+            "count": len(products_list),
+            "updated": is_updated
+        }))
+        
         if is_updated:
-            # Send updated products to frontend
-            await websocket.send_text(json.dumps({
-                "type": "products",
-                "products": products_list,
-                "count": len(products_list)
-            }))
             print("✅ Sent updated product list")
         else:
-            print("ℹ️ Product list unchanged, not sending")
+            print("📤 Sent unchanged product list (for debugging)")
             
     except Exception as e:
         print(f"💥 Product filtering failed: {e}")

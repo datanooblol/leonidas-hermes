@@ -242,6 +242,7 @@ export const DashboardTemplate = (props: DashboardTemplateProps) => {
         />
 
         <CustomerSidebar 
+          key={`customer-${customer.age}-${customer.income}-${customer.status}-${customer.children}`}
           isOpen={sidebarOpen} 
           toggle={() => setSidebarOpen(!sidebarOpen)}
           customer={customer}

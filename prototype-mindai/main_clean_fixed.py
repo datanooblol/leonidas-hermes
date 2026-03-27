@@ -22,7 +22,7 @@ from package.program.extraction import (
 from package.program.memory import conversation_memory
 from package.program.product_filter import filter_and_send_products
 import asyncio
-
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 app = FastAPI(title="Prototype for MindAI")
 
 # Enable CORS for Next.js frontend
@@ -41,7 +41,7 @@ greeting_guide = {
     "action": "เริ่มการสนทนาด้วยการทักทายอย่างมืออาชีพและแนะนำตัว",
     "explanation": "เริ่มการโทรโดยการสร้างความน่าเชื่อถือและสร้างความสัมพันธ์กับลูกค้า",
     "signals": [
-        "เพิ่มเริ่มต้นการโทร",
+        "เพิ่งเริ่มต้นการโทร",
         "ลูกค้ารับสายแล้ว",
         "ไม่มีบริบทการสนทนาก่อนหน้า"
     ],
@@ -56,7 +56,7 @@ async def guide_stage(websocket, data):
     """Handle guide stage processing with all flows"""
     stage_name = data.get("stage_name")
     content = data.get("content", "")
-    model_id = "us.amazon.nova-micro-v1:0"
+    model_id = "us.amazon.nova-2-lite-v1:0"
     
     # Flow 1: Extract customer data from conversation (with product filtering)
     asyncio.create_task(extract_customer_data(websocket, model_id, content, products_df))
@@ -82,6 +82,7 @@ async def handle_manual_information_update(websocket, data):
     """Handle manual customer information updates"""
     print(f"🔧 DEBUG: Manual info update received: {data}")
     print(f"🔧 DEBUG: Current memory: {conversation_memory.customer_information}")
+    print(f"🔧 DEBUG: products_df shape: {products_df.shape}")
     
     is_updated = conversation_memory.update_customer_information(data)
     print(f"🔧 DEBUG: Memory updated: {is_updated}")
@@ -93,10 +94,16 @@ async def handle_manual_information_update(websocket, data):
             "customer_information": conversation_memory.customer_information,
             "status": "updated"
         }))
+        print(f"🔧 DEBUG: Sent information message")
         print(f"🔧 DEBUG: Calling filter_and_send_products...")
-        # Filter and send products if data changed
-        await filter_and_send_products(websocket, products_df)
-        print(f"🔧 DEBUG: filter_and_send_products completed")
+        
+        try:
+            await filter_and_send_products(websocket, products_df)
+            print(f"🔧 DEBUG: filter_and_send_products completed successfully")
+        except Exception as e:
+            print(f"💥 ERROR in filter_and_send_products: {e}")
+            import traceback
+            traceback.print_exc()
     else:
         await websocket.send_text(json.dumps({
             "type": "information",
@@ -106,7 +113,12 @@ async def handle_manual_information_update(websocket, data):
 
 async def handle_manual_interest_update(websocket, data):
     """Handle manual customer interest updates"""
+    print(f"🔧 DEBUG: Manual interest update received: {data}")
+    print(f"🔧 DEBUG: Current memory: {conversation_memory.customer_interest}")
+    
     is_updated = conversation_memory.update_customer_interest(data)
+    print(f"🔧 DEBUG: Interest updated: {is_updated}")
+    
     if is_updated:
         # Send updated interests
         await websocket.send_text(json.dumps({
@@ -114,8 +126,16 @@ async def handle_manual_interest_update(websocket, data):
             "customer_interest": conversation_memory.customer_interest,
             "status": "updated"
         }))
-        # Filter and send products if data changed
-        await filter_and_send_products(websocket, products_df)
+        print(f"🔧 DEBUG: Sent interest message")
+        print(f"🔧 DEBUG: Calling filter_and_send_products for interest update...")
+        
+        try:
+            await filter_and_send_products(websocket, products_df)
+            print(f"🔧 DEBUG: filter_and_send_products completed successfully")
+        except Exception as e:
+            print(f"💥 ERROR in filter_and_send_products: {e}")
+            import traceback
+            traceback.print_exc()
     else:
         await websocket.send_text(json.dumps({
             "type": "interest",
@@ -197,15 +217,17 @@ async def websocket_endpoint(websocket: WebSocket):
                 command_type = command.get("type")
                 data = command.get("data", {})
                 
+                print(f"📨 Received command: type={command_type}")
+                
                 # Route commands to appropriate handlers
                 if command_type == "guide":
                     await guide_stage(websocket, data)
                     
                 elif command_type == "manual_information_update":
-                    print(f"🔧 DEBUG: Received manual_information_update command with data: {data}")
                     await handle_manual_information_update(websocket, data)
                     
                 elif command_type == "manual_interest_update":
+                    print(f"🔧 DEBUG: Received manual_interest_update command with data: {data}")
                     await handle_manual_interest_update(websocket, data)
                     
                 elif command_type == "manual_stage_update":
@@ -227,5 +249,10 @@ async def websocket_endpoint(websocket: WebSocket):
         import traceback
         traceback.print_exc()
 
+    except WebSocketDisconnect:
+        print("WebSocket disconnected")
+    finally:
+        conversation_memory.reset()
+
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main_clean_fixed:app", host="0.0.0.0", port=8000, reload=True)
