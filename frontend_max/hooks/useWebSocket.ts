@@ -91,16 +91,27 @@ export const useWebSocket = () => {
       
       ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      console.log('📨 Received message:', data.type, data);
       
       switch(data.type) {
         case 'transcription':
           setTranscription(data.transcription);
           break;
         case 'information':
-          setCustomerInfo(data.customer_information);
+          if (data.status === 'updated') {
+            setCustomerInfo(data.customer_information);
+            console.log('✅ Customer info updated:', data.customer_information);
+          } else if (data.status === 'no_change') {
+            console.log('ℹ️ Customer info: no changes');
+          }
           break;
         case 'interest':
-          setInterests(data.customer_interest);
+          if (data.status === 'updated') {
+            setInterests(data.customer_interest);
+            console.log('✅ Customer interest updated:', data.customer_interest);
+          } else if (data.status === 'no_change') {
+            console.log('ℹ️ Customer interest: no changes');
+          }
           break;
         case 'guide':
           // Map backend stage names to frontend
@@ -108,43 +119,77 @@ export const useWebSocket = () => {
             'greeting': 'Greet',
             'discovery': 'Discover', 
             'pitch': 'Pitch',
-            'pitching': 'Pitch',      // Backend inconsistency: sometimes sends 'pitching'
+            'pitching': 'Pitch',
             'closing': 'Closing',
             'objection': 'Objection'
           };
           if (data.stage_name) {
             setCurrentStage(stageMap[data.stage_name] || 'Greet');
+            console.log('🎯 Stage changed to:', data.stage_name);
           }
-          setGuide(data.guide);
+          if (data.guide) {
+            setGuide(data.guide);
+            console.log('📋 Guide received:', data.guide);
+          }
+          if (data.status === 'processing') {
+            console.log('⏳ Backend processing...');
+          }
           break;
         case 'products':
           setProducts(data.products);
+          console.log('🛍️ Products received:', data.products?.length || 0);
+          break;
+        case 'checklist':
+          console.log('✅ Agent checklist:', data.agent_checklist);
+          // Store checklist in state if needed
+          break;
+        case 'stage_change':
+          console.log('🔄 Stage transition:', data);
+          const stageMapAuto: Record<string, Stage> = {
+            'greeting': 'Greet',
+            'discovery': 'Discover',
+            'pitch': 'Pitch',
+            'closing': 'Closing'
+          };
+          if (data.to_stage) {
+            setCurrentStage(stageMapAuto[data.to_stage] || 'Greet');
+            console.log(`🎯 Auto-transition: ${data.from_stage} → ${data.to_stage} (${data.reason})`);
+          } else if (data.current_stage) {
+            console.log(`ℹ️ Already in ${data.current_stage} stage`);
+          }
           break;
         case 'objection':
           console.log('🚨 Objection detected:', data);
-          setShowWarning(true);
-          const objectionGuide = data.guide || {
-            action: 'Handle customer objection',
-            explanation: 'Customer has raised a concern that needs to be addressed',
-            lines_to_say: ['I understand your concern', 'Let me address that for you'],
-            signals: ['objection_detected']
-          };
-          setWarningData({
-            title: '⚠️ Objection Detected',
-            concern: 'Customer has raised a concern',
-            action: objectionGuide.action,
-            tags: objectionGuide.signals || [],
-            lines: objectionGuide.lines_to_say || [],
-            explanation: objectionGuide.explanation
-          });
-          setGuide(objectionGuide);
+          if (data.detected !== false) {
+            setShowWarning(true);
+            const objectionGuide = data.guide || {
+              action: 'Handle customer objection',
+              explanation: 'Customer has raised a concern that needs to be addressed',
+              lines_to_say: ['I understand your concern', 'Let me address that for you'],
+              signals: ['objection_detected']
+            };
+            setWarningData({
+              title: '⚠️ Objection Detected',
+              concern: 'Customer has raised a concern',
+              action: objectionGuide.action,
+              tags: objectionGuide.signals || [],
+              lines: objectionGuide.lines_to_say || [],
+              explanation: objectionGuide.explanation
+            });
+            setGuide(objectionGuide);
+          }
           break;
         case 'objection_resolved':
           console.log('✅ Objection resolved');
           setShowWarning(false);
           setWarningData(null);
-          setGuide(null);
           break;
+        case 'error':
+          console.error('❌ Backend error:', data.message);
+          // Could show toast notification here
+          break;
+        default:
+          console.warn('⚠️ Unknown message type:', data.type);
       }
     };
     } catch (error) {

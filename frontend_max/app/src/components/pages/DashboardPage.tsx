@@ -209,16 +209,20 @@ export const DashboardPage = () => {
     setLocalCustomer(updatedCustomer);
     // Send manual update to backend
     if (wsState.isConnected) {
+      const updateData: any = {};
+      
+      if (updatedCustomer.age) updateData.age = parseInt(updatedCustomer.age);
+      if (updatedCustomer.income) updateData.income_per_month = parseInt(updatedCustomer.income);
+      if (updatedCustomer.status) updateData.marital_status = updatedCustomer.status;
+      if (updatedCustomer.children) updateData.number_of_children = parseInt(updatedCustomer.children);
+      
       wsState.sendMessage({
         type: "manual_information_update",
-        data: {
-          name: updatedCustomer.name || undefined,
-          age: parseInt(updatedCustomer.age) || undefined,
-          income_per_month: parseInt(updatedCustomer.income) || undefined,
-          marital_status: updatedCustomer.status,
-          number_of_children: parseInt(updatedCustomer.children) || undefined,
-        }
+        data: updateData
       });
+      console.log('📝 Sent customer info update:', updateData);
+    } else {
+      console.error('❌ Cannot send update: WebSocket not connected');
     }
   };
 
@@ -240,6 +244,9 @@ export const DashboardPage = () => {
           investment: newInterests["Investment"],
         }
       });
+      console.log('❤️ Sent interest update:', key, newInterests[key]);
+    } else {
+      console.error('❌ Cannot send update: WebSocket not connected');
     }
   };
 
@@ -253,15 +260,18 @@ export const DashboardPage = () => {
       'CLOSING': 'closing'
     };
     
-    // Send simulated customer speech via WebSocket with new schema
+    // Send simulated customer speech via WebSocket with correct schema
     if (wsState.isConnected) {
       wsState.sendMessage({
         type: "guide",
-        text: {
+        data: {
           stage_name: stageMap[stageId] || 'greeting',
           content: text
         }
       });
+      console.log('🗣️ Sent guide message:', { stage: stageMap[stageId], content: text.substring(0, 50) + '...' });
+    } else {
+      console.error('❌ Cannot send message: WebSocket not connected');
     }
   };
 
@@ -271,6 +281,9 @@ export const DashboardPage = () => {
         type: "manual_resolve_objection",
         data: { resolved: true }
       });
+      console.log('✅ Sent objection resolution');
+    } else {
+      console.error('❌ Cannot send resolution: WebSocket not connected');
     }
     wsState.clearWarning();
   };
