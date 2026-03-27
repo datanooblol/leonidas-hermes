@@ -63,12 +63,13 @@ export const ProductSidebar = ({ isOpen, toggle, products, onSelect }: ProductSi
         )}
       </div>
 
-      {/* Toggle Button */}
+      {/* ⚫ แท็บดึง Product Sidebar (สีเข้ม) */}
       <button 
         onClick={toggle}
-        className="absolute -left-6 top-24 bg-white dark:bg-[#1E1F20] border border-r-0 border-gray-200 dark:border-[#444746] p-1 rounded-l-lg shadow-md text-gray-500 dark:text-gray-400 hover:text-[#0B57D0] dark:hover:text-[#A8C7FA] transition-colors cursor-pointer"
+        className="absolute -left-8 top-24 w-8 h-16 flex items-center justify-center bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-l-xl shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.3)] transition-all cursor-pointer border border-r-0 border-gray-900 dark:border-gray-500"
+        title="Products"
       >
-        {isOpen ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        {isOpen ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
       </button>
     </div>
   );

@@ -7,3 +7,4 @@ export * from "./ProductModal";
 export * from "./LogoutModal";
 export * from "./LoginPage";
 export * from "./CustomerSidebar";
+export * from "./SimulationSidebar";

@@ -11,18 +11,24 @@ interface CustomerSidebarProps {
   setCustomer: (c: CustomerInfo) => void;
   interests: Record<string, boolean>;
   toggleInterest: (key: string) => void;
+  isSimulationOpen?: boolean;
 }
 
-export const CustomerSidebar = ({ isOpen, toggle, customer, setCustomer, interests, toggleInterest }: CustomerSidebarProps) => {
+export const CustomerSidebar = ({ isOpen, toggle, customer, setCustomer, interests, toggleInterest, isSimulationOpen }: CustomerSidebarProps) => {
   return (
     <div 
       className={`
-        fixed inset-y-0 left-0 z-40 w-[20rem] 
+        fixed inset-y-0 left-0 z-30 w-[20rem] 
         bg-[#F0F4F9] dark:bg-[#131314] 
         border-r border-gray-200 dark:border-[#444746] 
-        transform transition-transform duration-300 ease-in-out flex flex-col
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        pt-16 
+        transform transition-transform duration-300 ease-in-out flex flex-col pt-16
+        /* ✅ แก้ไข Logic การสไลด์: 
+           - ถ้าปิด: เลื่อนไปหลบหลัง Simulation (0) หรือหลบซ้ายสุด (-100%) 
+           - ถ้าเปิด: เลื่อนออกมาต่อท้าย (20rem) หรืออยู่ชิดซ้ายปกติ (0) */
+        ${!isOpen 
+          ? (isSimulationOpen ? 'translate-x-0' : '-translate-x-full') 
+          : (isSimulationOpen ? 'translate-x-[20rem]' : 'translate-x-0')
+        }
       `}
     >
       <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
@@ -73,12 +79,13 @@ export const CustomerSidebar = ({ isOpen, toggle, customer, setCustomer, interes
         </Card>
       </div>
 
-      {/* Toggle Button */}
+      {/* 🔵 แท็บดึง Customer Sidebar (สีน้ำเงิน) */}
       <button 
         onClick={toggle}
-        className="absolute -right-6 top-24 bg-white dark:bg-[#1E1F20] border border-l-0 border-gray-200 dark:border-[#444746] p-1 rounded-r-lg shadow-md text-gray-500 dark:text-gray-400 hover:text-[#0B57D0] dark:hover:text-[#A8C7FA] transition-colors cursor-pointer"
+        className="absolute -right-8 top-48 w-8 h-16 flex items-center justify-center bg-[#0B57D0] hover:bg-blue-700 text-white rounded-r-xl shadow-[4px_0_15px_-3px_rgba(11,87,208,0.3)] transition-all cursor-pointer border border-l-0 border-blue-800 dark:border-blue-600"
+        title="Customer Info"
       >
-        {isOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+        {isOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
       </button>
     </div>
   );

@@ -12,7 +12,7 @@ export interface Product {
 }
 
 export interface CustomerInfo {
-  name: string;
+  // name: string;
   age: string;
   income: string;
   status: string;
@@ -39,51 +39,4 @@ export interface WarningData {
   action: string;
   lines: string[];
   explanation: string;
-}
-
-// WebSocket Message Types
-export interface WebSocketMessage {
-  type?: 'transcription' | 'information' | 'interest' | 'checklist' | 'guide' | 'products' | 'stage_change' | 'objection' | 'objection_resolved';
-  timestamp?: string;
-  transcription?: string;
-  customer_information?: any;
-  customer_interest?: any;
-  agent_checklist?: any;
-  guide?: any;
-  products?: any;
-  stage_name?: string;
-  status?: string;
-  stage?: string;
-  reason?: string;
-  previous_stage?: string;
-}
-
-// Backend Product Interface
-export interface BackendProduct {
-  product_id: string;
-  product_name: string;
-  objective: string;
-  premium_min_month_thb: number;
-  premium_max_month_thb: number;
-  age_min: number;
-  age_max: number;
-  notes?: string;
-}
-
-// Backend Customer Info
-export interface BackendCustomerInfo {
-  age?: number;
-  income_per_month?: number;
-  marital_status?: string;
-  number_of_children?: number;
-}
-
-// Backend Interest
-export interface BackendInterest {
-  life_insurance?: boolean;
-  health_insurance?: boolean;
-  critical_illness?: boolean;
-  accident_insurance?: boolean;
-  retirement_planning?: boolean;
-  tax_benefits?: boolean;
 }
