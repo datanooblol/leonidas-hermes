@@ -103,11 +103,11 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CustomerInfo, Product } from "@/types";
 import { MOCK_PRODUCTS } from "@/data/mock"; 
-import { useTeleSaleSimulation } from "@/hooks/useTeleSaleSimulation";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import { DashboardTemplate } from "../templates/DashboardTemplate";
 
 export const DashboardPage = () => {
@@ -121,20 +121,22 @@ export const DashboardPage = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [transcriptText, setTranscriptText] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // --- Business Logic Hook ---
-  const simulationState = useTeleSaleSimulation();
+  // --- WebSocket Hook ---
+  const wsState = useWebSocket();
 
-  // --- Data State ---
-  const [customer, setCustomer] = useState<CustomerInfo>({
-    // name: "คุณสมชาย ใจดี",
-    age: "", // ✅ ทำให้ว่างไว้ก่อน จะได้เห็นชัดๆ ตอน AI ดึงมาเติมให้
+  // --- Data State (Synced with Backend) ---
+  const [localCustomer, setLocalCustomer] = useState<CustomerInfo>({
+    name: "",
+    age: "",
     income: "",
     status: "Single",
     children: "0",
   });
 
-  const [interests, setInterests] = useState<Record<string, boolean>>({
+  const [localInterests, setLocalInterests] = useState<Record<string, boolean>>({
     "Life Insurance": false,
     "Health Insurance": false,
     "Critical Illness": false,
@@ -145,54 +147,172 @@ export const DashboardPage = () => {
     Investment: false,
   });
 
-  const filteredProducts = MOCK_PRODUCTS.filter((p) => interests[p.category]);
+  // Sync backend data to local state
+  useEffect(() => {
+    if (wsState.customerInfo && Object.keys(wsState.customerInfo).length > 0) {
+      setLocalCustomer(prev => ({
+        ...prev,
+        name: wsState.customerInfo.name || prev.name,
+        age: wsState.customerInfo.age?.toString() || prev.age,
+        income: wsState.customerInfo.income_per_month?.toString() || prev.income,
+        status: wsState.customerInfo.marital_status || prev.status,
+        children: wsState.customerInfo.number_of_children?.toString() || prev.children,
+      }));
+    }
+  }, [wsState.customerInfo]);
+
+  useEffect(() => {
+    if (wsState.interests && Object.keys(wsState.interests).length > 0) {
+      const mappedInterests = {
+        "Life Insurance": wsState.interests.life_insurance || false,
+        "Health Insurance": wsState.interests.health_insurance || false,
+        "Critical Illness": wsState.interests.critical_illness || false,
+        "Retirement Planning": wsState.interests.retirement_planning || false,
+        "Accident Insurance": wsState.interests.accident_insurance || false,
+        "Tax Benefits": wsState.interests.tax_benefits || false,
+        "Education Fund": wsState.interests.education_fund || false,
+        "Investment": wsState.interests.investment || false,
+      };
+      setLocalInterests(prev => ({ ...prev, ...mappedInterests }));
+    }
+  }, [wsState.interests]);
+
+  // Sync transcription
+  useEffect(() => {
+    if (wsState.transcription) {
+      setTranscriptText(prev => prev + '\n' + wsState.transcription);
+    }
+  }, [wsState.transcription]);
+
+  // Use backend products if available, otherwise fallback to mock
+  const products = wsState.products.length > 0 
+    ? wsState.products.map(p => ({
+        id: p.product_id,
+        name: p.product_name,
+        category: p.objective,
+        price: `${p.premium_min_month_thb}-${p.premium_max_month_thb} THB/month`,
+        ageRange: `${p.age_min}-${p.age_max} years`,
+        description: p.notes || p.objective,
+        fullDetail: p.notes || p.objective
+      }))
+    : MOCK_PRODUCTS.filter((p) => localInterests[p.category]);
 
   // --- Actions ---
   const handleLogout = () => {
-    simulationState.resetSimulation();
+    wsState.disconnect();
+    wsState.resetSession();
     document.cookie = "auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     router.push("/login");
   };
 
-  const toggleInterest = (key: string) => {
-    setInterests((prev) => ({ ...prev, [key]: !prev[key] }));
+  const handleCustomerUpdate = (updatedCustomer: CustomerInfo) => {
+    setLocalCustomer(updatedCustomer);
+    // Send manual update to backend
+    if (wsState.isConnected) {
+      wsState.sendMessage({
+        type: "manual_information_update",
+        data: {
+          name: updatedCustomer.name || undefined,
+          age: parseInt(updatedCustomer.age) || undefined,
+          income_per_month: parseInt(updatedCustomer.income) || undefined,
+          marital_status: updatedCustomer.status,
+          number_of_children: parseInt(updatedCustomer.children) || undefined,
+        }
+      });
+    }
   };
 
-  // ✅ สร้างฟังก์ชันแรปเปอร์ เพื่อรอรับข้อมูลสกัดจาก AI
+  const toggleInterest = (key: string) => {
+    const newInterests = { ...localInterests, [key]: !localInterests[key] };
+    setLocalInterests(newInterests);
+    // Send manual update to backend
+    if (wsState.isConnected) {
+      wsState.sendMessage({
+        type: "manual_interest_update",
+        data: {
+          life_insurance: newInterests["Life Insurance"],
+          health_insurance: newInterests["Health Insurance"],
+          critical_illness: newInterests["Critical Illness"],
+          retirement_planning: newInterests["Retirement Planning"],
+          accident_insurance: newInterests["Accident Insurance"],
+          tax_benefits: newInterests["Tax Benefits"],
+          education_fund: newInterests["Education Fund"],
+          investment: newInterests["Investment"],
+        }
+      });
+    }
+  };
+
   const handleSimulateResponse = (text: string, stageId: string) => {
-    simulationState.simulateCustomerResponse(text, stageId, (extractedData) => {
-      // 1. ถ้า AI บอกว่ามีข้อมูลลูกค้า (อายุ, รายได้) ให้อัปเดต
-      if (extractedData?.customer) {
-        setCustomer((prev) => ({ ...prev, ...extractedData.customer }));
-      }
-      // 2. ถ้า AI บอกว่าลูกค้าสนใจอะไร ให้อัปเดต
-      if (extractedData?.interests) {
-        setInterests((prev) => ({ ...prev, ...extractedData.interests }));
-      }
-    });
+    // Map frontend stage IDs to backend stage names
+    const stageMap: Record<string, string> = {
+      'GREET': 'greeting',
+      'DISCOVER': 'discovery',
+      'PITCH': 'pitch',
+      'OBJECTION': 'objection',
+      'CLOSING': 'closing'
+    };
+    
+    // Send simulated customer speech via WebSocket with new schema
+    if (wsState.isConnected) {
+      wsState.sendMessage({
+        type: "guide",
+        text: {
+          stage_name: stageMap[stageId] || 'greeting',
+          content: text
+        }
+      });
+    }
+  };
+
+  const handleObjectionResolved = () => {
+    if (wsState.isConnected) {
+      wsState.sendMessage({
+        type: "manual_resolve_objection",
+        data: { resolved: true }
+      });
+    }
+    wsState.clearWarning();
+  };
+
+  const handlePlayAudioFile = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      wsState.playAudioFile(file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
-    <DashboardTemplate
+    <>
+      <DashboardTemplate
       simulationSidebarOpen={simulationSidebarOpen}
       setSimulationSidebarOpen={setSimulationSidebarOpen}
       sidebarOpen={sidebarOpen}
       setSidebarOpen={setSidebarOpen}
       productSidebarOpen={productSidebarOpen}
       setProductSidebarOpen={setProductSidebarOpen}
-      simulationState={{
-        ...simulationState,
-        // ✅ เปลี่ยนไปส่งฟังก์ชันแรปเปอร์ของเราแทน
-        simulateCustomerResponse: handleSimulateResponse 
-      }}
-      customer={customer}
-      setCustomer={setCustomer}
-      interests={interests}
+      wsState={wsState}
+      simulateCustomerResponse={handleSimulateResponse}
+      customer={localCustomer}
+      setCustomer={handleCustomerUpdate}
+      interests={localInterests}
       toggleInterest={toggleInterest}
-      filteredProducts={filteredProducts}
+      filteredProducts={products}
       actions={{
         handleLogout,
-        handleMicClick: simulationState.toggleRecording,
+        handleMicClick: wsState.toggleRecording,
+        handleConnect: wsState.connect,
+        handleDisconnect: wsState.disconnect,
+        handleObjectionResolved,
+        handlePlayAudioFile,
+        handleStopAudio: wsState.stopAudioFile,
         setSelectedProduct,
         setShowTranscript,
         setShowLogoutConfirm,
@@ -201,7 +321,16 @@ export const DashboardPage = () => {
         selectedProduct,
         showTranscript,
         showLogoutConfirm,
+        transcriptText,
       }}
     />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="audio/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+    </>
   );
 };

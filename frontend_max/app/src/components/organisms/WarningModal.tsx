@@ -6,9 +6,10 @@ import { WarningData } from '@/types';
 interface WarningModalProps {
   content: WarningData;
   onClose: () => void;
+  onResolve?: () => void;
 }
 
-export const WarningModal = ({ content, onClose }: WarningModalProps) => (
+export const WarningModal = ({ content, onClose, onResolve }: WarningModalProps) => (
   <div className="fixed inset-0 z-90 flex items-center justify-center p-4 overflow-hidden">
     {/* 🔒 Locked Backdrop with Red Tint */}
     <div className="absolute inset-0 bg-[#2a0a0a]/90 backdrop-blur-md cursor-not-allowed animate-in fade-in duration-300" />
@@ -83,7 +84,10 @@ export const WarningModal = ({ content, onClose }: WarningModalProps) => (
           </Button>
           <Button 
             variant="success" 
-            onClick={onClose} 
+            onClick={() => {
+              if (onResolve) onResolve();
+              onClose();
+            }} 
             className="h-14 bg-red-600 hover:bg-red-700 text-white border-none shadow-[0_0_20px_rgba(220,38,38,0.4)] text-lg font-bold"
           >
             <Check size={20} /> RESOLVE NOW

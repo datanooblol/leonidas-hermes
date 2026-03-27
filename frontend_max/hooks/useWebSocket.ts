@@ -35,8 +35,10 @@ function convertToWav(samples: Float32Array, sampleRate: number): Blob {
   return new Blob([buffer], { type: 'audio/wav' });
 }
 
+type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
+
 export const useWebSocket = () => {
-  const [isConnected, setIsConnected] = useState(false);
+  const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
   const [isRecording, setIsRecording] = useState(false);
   const [isPlayingFile, setIsPlayingFile] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
@@ -48,6 +50,7 @@ export const useWebSocket = () => {
   const [interests, setInterests] = useState<any>({});
   const [products, setProducts] = useState<any[]>([]);
   const [guide, setGuide] = useState<any>(null);
+  const [warningData, setWarningData] = useState<any>(null);
   
   const ws = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -56,13 +59,37 @@ export const useWebSocket = () => {
   const fileSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    ws.current = new WebSocket('ws://localhost:8000/ws');
-    
-    ws.current.onopen = () => setIsConnected(true);
-    ws.current.onclose = () => setIsConnected(false);
-    ws.current.onmessage = (event) => {
+  const setupWebSocket = useCallback(() => {
+    if (ws.current?.readyState === WebSocket.OPEN || ws.current?.readyState === WebSocket.CONNECTING) {
+      return;
+    }
+
+    try {
+      ws.current = new WebSocket('ws://localhost:8000/ws');
+      
+      ws.current.onopen = () => {
+        console.log('✅ WebSocket connected');
+        setConnectionState('connected');
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+          reconnectTimeoutRef.current = null;
+        }
+      };
+      
+      ws.current.onclose = () => {
+        console.log('❌ WebSocket disconnected');
+        setConnectionState('disconnected');
+        setIsRecording(false);
+      };
+      
+      ws.current.onerror = (error) => {
+        console.error('❌ WebSocket error:', error);
+        setConnectionState('error');
+      };
+      
+      ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
       
       switch(data.type) {
@@ -81,7 +108,9 @@ export const useWebSocket = () => {
             'greeting': 'Greet',
             'discovery': 'Discover', 
             'pitch': 'Pitch',
-            'closing': 'Closing'
+            'pitching': 'Pitch',      // Backend inconsistency: sometimes sends 'pitching'
+            'closing': 'Closing',
+            'objection': 'Objection'
           };
           if (data.stage_name) {
             setCurrentStage(stageMap[data.stage_name] || 'Greet');
@@ -94,24 +123,66 @@ export const useWebSocket = () => {
         case 'objection':
           console.log('🚨 Objection detected:', data);
           setShowWarning(true);
-          // Set objection guide even if empty, with fallback data
           const objectionGuide = data.guide || {
             action: 'Handle customer objection',
             explanation: 'Customer has raised a concern that needs to be addressed',
             lines_to_say: ['I understand your concern', 'Let me address that for you'],
             signals: ['objection_detected']
           };
+          setWarningData({
+            title: '⚠️ Objection Detected',
+            concern: 'Customer has raised a concern',
+            action: objectionGuide.action,
+            tags: objectionGuide.signals || [],
+            lines: objectionGuide.lines_to_say || [],
+            explanation: objectionGuide.explanation
+          });
           setGuide(objectionGuide);
           break;
         case 'objection_resolved':
           console.log('✅ Objection resolved');
           setShowWarning(false);
+          setWarningData(null);
           setGuide(null);
           break;
       }
     };
+    } catch (error) {
+      console.error('Failed to create WebSocket:', error);
+      setConnectionState('error');
+    }
+  }, []);
 
-    return () => ws.current?.close();
+  const connect = useCallback(() => {
+    if (connectionState === 'connecting' || connectionState === 'connected') {
+      return;
+    }
+    setConnectionState('connecting');
+    setupWebSocket();
+  }, [connectionState, setupWebSocket]);
+
+  const disconnect = useCallback(() => {
+    if (ws.current) {
+      ws.current.close();
+      ws.current = null;
+    }
+    setConnectionState('disconnected');
+    setIsRecording(false);
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (ws.current) {
+        ws.current.close();
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+    };
   }, []);
 
   const sendMessage = useCallback((message: any) => {
@@ -201,7 +272,8 @@ export const useWebSocket = () => {
       'Greet': 'greeting',
       'Discover': 'discovery',
       'Pitch': 'pitch', 
-      'Closing': 'closing'
+      'Closing': 'closing',
+      'Objection': 'objection'
     };
     sendMessage({
       type: 'guide',
@@ -356,7 +428,8 @@ export const useWebSocket = () => {
   }, []);
 
   return {
-    isConnected,
+    connectionState,
+    isConnected: connectionState === 'connected',
     currentStage,
     isRecording,
     isPlayingFile,
@@ -364,12 +437,16 @@ export const useWebSocket = () => {
     audioDuration,
     showWarning,
     setShowWarning,
+    warningData,
+    clearWarning: () => setWarningData(null),
     transcription,
     customerInfo,
     interests,
     products,
     guide,
     analyserNode: analyserRef.current,
+    connect,
+    disconnect,
     toggleRecording,
     playAudioFile,
     uploadAudioFile,

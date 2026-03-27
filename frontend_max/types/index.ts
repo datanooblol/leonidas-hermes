@@ -1,4 +1,4 @@
-export type Stage = 'Greet' | 'Discover' | 'Pitch' | 'Closing';
+export type Stage = 'Greet' | 'Discover' | 'Pitch' | 'Closing' | 'Objection';
 export type Theme = 'dark' | 'light';
 
 export interface Product {
@@ -12,7 +12,7 @@ export interface Product {
 }
 
 export interface CustomerInfo {
-  // name: string;
+  name?: string;
   age: string;
   income: string;
   status: string;

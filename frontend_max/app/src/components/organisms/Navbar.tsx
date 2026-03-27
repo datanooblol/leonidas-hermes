@@ -19,10 +19,12 @@ import Image from "next/image";
 
 interface NavbarProps {
   isRecording: boolean;
+  isConnected: boolean;
+  connectionState: 'disconnected' | 'connecting' | 'connected' | 'error';
   onLogout: () => void;
 }
 
-export const Navbar = ({ isRecording, onLogout }: NavbarProps) => {
+export const Navbar = ({ isRecording, isConnected, connectionState, onLogout }: NavbarProps) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   // ✅ ใช้ Hook มาตรฐาน
@@ -50,8 +52,16 @@ export const Navbar = ({ isRecording, onLogout }: NavbarProps) => {
 
         <div className="ml-6 px-3 py-1 bg-gray-900/90 dark:bg-black/40 text-white dark:text-gray-300 text-[10px] rounded border border-transparent dark:border-gray-700 flex flex-col gap-0.5">
           <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 bg-green-500 rounded-full shadow-[0_0_5px_rgba(34,197,94,0.5)]"></span>
-            Connected
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              connectionState === 'connected' ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]' :
+              connectionState === 'connecting' ? 'bg-yellow-500 animate-pulse shadow-[0_0_5px_rgba(234,179,8,0.5)]' :
+              connectionState === 'error' ? 'bg-orange-500 shadow-[0_0_5px_rgba(249,115,22,0.5)]' :
+              'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]'
+            }`}></span>
+            {connectionState === 'connected' ? 'Connected' :
+             connectionState === 'connecting' ? 'Connecting...' :
+             connectionState === 'error' ? 'Error' :
+             'Disconnected'}
           </span>
           <span className="flex items-center gap-1.5">
             <span
