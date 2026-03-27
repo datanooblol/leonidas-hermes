@@ -210,7 +210,6 @@ __marimo__/
 logs
 
 # Node.js
-package.json
 package-lock.json
 node_modules/
 npm-debug.log*
